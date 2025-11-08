@@ -10,7 +10,8 @@ local player = Players.LocalPlayer
 
 local WHITELIST = {
 
-    "lindao_gojo3","LOOKATTHIS_NOPE","santhibustillo","shadow_dr50","ERrOr999898","jef123487643762856"
+    "lindao_gojo3","LOOKATTHIS_NOPE","santhibustillo","shadow_dr50","ERrOr999898","jef123487643762856",
+"nikianejd"
 
 }
 

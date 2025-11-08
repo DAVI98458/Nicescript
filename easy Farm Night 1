@@ -1,0 +1,213 @@
+--// Serviços
+
+local Players = game:GetService("Players")
+
+local TweenService = game:GetService("TweenService")
+
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+
+local character = player.Character or player.CharacterAdded:Wait()
+
+--// Rayfield UI
+
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+
+    Name = "Beta Auto Farm",
+
+    LoadingTitle = "Beta Auto Farm Night 1",
+
+    LoadingSubtitle = "by shadown_gd",
+
+    ConfigurationSaving = {
+
+        Enabled = false
+
+    },
+
+    KeySystem = false
+
+})
+
+--// ABA FARM
+
+local FarmTab = Window:CreateTab("Farm", 4483362458)
+
+local function CreateSafeZone()
+
+    local platformPos = Vector3.new(-19, 9, -105)
+
+    local teleportPos = Vector3.new(-19, 12, -105)
+
+    local existing = workspace:FindFirstChild("SafeZonePlatform")
+
+    if existing then
+
+        existing:Destroy()
+
+    end
+
+    local part = Instance.new("Part")
+
+    part.Name = "SafeZonePlatform"
+
+    part.Size = Vector3.new(100, 2, 100)
+
+    part.Position = platformPos
+
+    part.Anchored = true
+
+    part.CanCollide = true
+
+    part.Color = Color3.fromRGB(0, 255, 0)
+
+    part.Material = Enum.Material.Neon
+
+    part.Transparency = 0.9
+
+    part.Parent = workspace
+
+    local char = player.Character or player.CharacterAdded:Wait()
+
+    local hrp = char:WaitForChild("HumanoidRootPart")
+
+    local tweenInfo = TweenInfo.new(4, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+
+    local tween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(teleportPos)})
+
+    tween:Play()
+
+end
+
+FarmTab:CreateButton({
+
+    Name = "Safe Zone",
+
+    Callback = CreateSafeZone
+
+})
+
+--// ABA EXTRA
+
+local ExtraTab = Window:CreateTab("Extra", 4483362458)
+
+-- Infinite Stamina Loop
+
+local infStamLoop = false
+
+local function StartInfStamLoop()
+
+    while infStamLoop do
+
+        local char = player.Character or player.CharacterAdded:Wait()
+
+        local sprintScript = char:FindFirstChild("Sprint")
+
+        if sprintScript then
+
+            local overdrive = sprintScript:FindFirstChild("Overdrive")
+
+            if overdrive and overdrive:IsA("ValueBase") then
+
+                overdrive.Value = 99999999999
+
+            end
+
+        end
+
+        task.wait(0.5)
+
+    end
+
+end
+
+ExtraTab:CreateToggle({
+
+    Name = "Inf Stam Loop",
+
+    CurrentValue = false,
+
+    Callback = function(state)
+
+        infStamLoop = state
+
+        if state then
+
+            task.spawn(StartInfStamLoop)
+
+        end
+
+    end
+
+})
+
+-- Função genérica para mudar tag
+
+local function SetChatTag(tagValue)
+
+    local title = player:FindFirstChild("Title")
+
+    if title and title:IsA("ValueBase") then
+
+        title.Value = tagValue
+
+    else
+
+        warn("Title não encontrado no jogador.")
+
+    end
+
+end
+
+-- Botões de Tags
+
+ExtraTab:CreateButton({
+
+    Name = "Get Tag VIP Chat (visual)",
+
+    Callback = function()
+
+        SetChatTag("VIP")
+
+    end
+
+})
+
+ExtraTab:CreateButton({
+
+    Name = "Get Tag OWNER Chat (visual)",
+
+    Callback = function()
+
+        SetChatTag("OWNER")
+
+    end
+
+})
+
+ExtraTab:CreateButton({
+
+    Name = "Get Tag Tester Chat (visual)",
+
+    Callback = function()
+
+        SetChatTag("Tester") -- se quiser "Testar" troque aqui
+
+    end
+
+})
+
+ExtraTab:CreateButton({
+
+    Name = "Get Tag Co-Owner Chat. (visual)",
+
+    Callback = function()
+
+        SetChatTag("Co-Owner")
+
+    end
+
+})

@@ -13,7 +13,7 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 -- Mostrar notificação (apenas visual) por 3 segundos
 Rayfield:Notify({
     Title = "surprise! =]",
-    Content = "anti-cheat bypassed (Credits: @joaopedro051314) ",
+    Content = "anti-cheat bypassed (Credits: @juão) ",
     Duration = 10
 })
 
@@ -40,7 +40,7 @@ task.delay(1, function()
 
     local function CreateSafeZone()
         local platformPos = Vector3.new(-19, 8, -105)
-        local teleportPos = Vector3.new(-36, 26, -88)
+        local teleportPos = Vector3.new(-33, 26, -88)
 
         local existing = workspace:FindFirstChild("SafeZonePlatform")
         if existing then

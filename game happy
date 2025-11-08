@@ -1,0 +1,9 @@
+local disabledAC = false
+            local remotesFolder = game.ReplicatedStorage.Remotes
+            local AnticheatRemote = remotesFolder.Kick
+            if disabledAC then return end
+            AnticheatRemote.Name = ""
+            Instance.new("RemoteEvent", remotesFolder).Name = "Kick"
+
+
+            disabledAC = true

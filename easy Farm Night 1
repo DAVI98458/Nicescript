@@ -38,9 +38,9 @@ local FarmTab = Window:CreateTab("Farm", 4483362458)
 
 local function CreateSafeZone()
 
-    local platformPos = Vector3.new(-19, 9, -105)
+    local platformPos = Vector3.new(-19, 8, -105)
 
-    local teleportPos = Vector3.new(-19, 12, -105)
+    local teleportPos = Vector3.new(-42, 12, -103)
 
     local existing = workspace:FindFirstChild("SafeZonePlatform")
 
@@ -182,7 +182,7 @@ ExtraTab:CreateButton({
 
     Callback = function()
 
-        SetChatTag("OWNER")
+        SetChatTag("Owner")
 
     end
 

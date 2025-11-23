@@ -1,5 +1,5 @@
 -- Carrega a biblioteca Rayfield
-local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- Cria janela/interface
 local Window = Rayfield:CreateWindow({

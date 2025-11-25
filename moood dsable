@@ -1,0 +1,14 @@
+if value == true then
+                game.Players.LocalPlayer.Character.Temperature.Disabled = true
+                AntFrosted.Value = true
+                if game.Players.LocalPlayer.Character.Temperature.Disabled == false then 
+                    game.Players.LocalPlayer.Character.Temperature.Disabled = true
+                end
+            else
+                game.Players.LocalPlayer.Character.Temperature.Disabled = false
+                AntFrosted.Value = false
+                if game.Players.LocalPlayer.Character.Temperature.Disabled == true then 
+                    game.Players.LocalPlayer.Character.Temperature.Disabled = false
+                end
+            end
+        end,

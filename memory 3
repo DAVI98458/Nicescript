@@ -1,353 +1,239 @@
 -- Serviços
-
 local Players = game:GetService("Players")
-
 local player = Players.LocalPlayer
 
-local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart") or player.CharacterAdded:Wait():WaitForChild("HumanoidRootPart")
+local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart") 
+    or player.CharacterAdded:Wait():WaitForChild("HumanoidRootPart")
 
 player.CharacterAdded:Connect(function(char)
-
     hrp = char:WaitForChild("HumanoidRootPart")
-
 end)
 
--- Rayfield
-
+-- Rayfield UI
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
 local Window = Rayfield:CreateWindow({
-
     Name = "Teleport Menu",
-
     LoadingTitle = "Teleport System",
-
     LoadingSubtitle = "Shadown_gd",
-
     ConfigurationSaving = {
-
         Enabled = true,
-
         FileName = "TeleportMenuConfig"
-
     }
-
 })
 
----------------------------
-
--- ABA ESP (Highlight + Distância + Inf Stamina)
-
----------------------------
-
+----------------------------------------------------------------
+-- ABA ESP
+----------------------------------------------------------------
 local ESPTab = Window:CreateTab("Extra", 4483362458)
 
 -- Highlight
-
-local highlightInstance
-
 local highlightEnabled = false
-
+local highlightInstance
 local distanceBillboard
 
 local function createHighlight()
-
     if highlightInstance then return end
 
     local target = workspace:FindFirstChild("BunkerRat")
+    if not target then return end
 
-    if target then
+    highlightInstance = Instance.new("Highlight")
+    highlightInstance.FillColor = Color3.fromRGB(255,0,0)
+    highlightInstance.OutlineColor = Color3.fromRGB(255,0,0)
+    highlightInstance.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    highlightInstance.Adornee = target
+    highlightInstance.Parent = target
 
-        highlightInstance = Instance.new("Highlight")
+    distanceBillboard = Instance.new("BillboardGui")
+    distanceBillboard.Size = UDim2.new(0,200,0,50)
+    distanceBillboard.StudsOffset = Vector3.new(0,5,0)
+    distanceBillboard.AlwaysOnTop = true
+    distanceBillboard.Parent = target:FindFirstChildWhichIsA("BasePart")
 
-        highlightInstance.FillColor = Color3.fromRGB(255, 0, 0)
+    local text = Instance.new("TextLabel")
+    text.Name = "DistanceLabel"
+    text.Size = UDim2.new(1,0,1,0)
+    text.BackgroundTransparency = 1
+    text.TextColor3 = Color3.fromRGB(255,0,0)
+    text.TextSize = 11
+    text.Font = Enum.Font.SourceSansBold
+    text.Text = "[dist:???]"
+    text.Parent = distanceBillboard
 
-        highlightInstance.OutlineColor = Color3.fromRGB(255, 0, 0)
-
-        highlightInstance.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-
-        highlightInstance.Adornee = target
-
-        highlightInstance.Parent = target
-
-        distanceBillboard = Instance.new("BillboardGui")
-
-        distanceBillboard.Size = UDim2.new(0, 200, 0, 50)
-
-        distanceBillboard.StudsOffset = Vector3.new(0, 5, 0)
-
-        distanceBillboard.AlwaysOnTop = true
-
-        distanceBillboard.Parent = target:FindFirstChildWhichIsA("BasePart")
-
-        local text = Instance.new("TextLabel")
-
-        text.Name = "DistanceLabel"
-
-        text.Size = UDim2.new(1, 0, 1, 0)
-
-        text.BackgroundTransparency = 1
-
-        text.TextColor3 = Color3.fromRGB(255, 0, 0)
-
-        text.TextScaled = false
-
-        text.TextSize = 11
-
-        text.Font = Enum.Font.SourceSansBold
-
-        text.Text = "[dist:???]"
-
-        text.Parent = distanceBillboard
-
-        task.spawn(function()
-
-            while highlightEnabled and target and hrp and text do
-
-                local dist = (hrp.Position - target:GetPivot().Position).Magnitude
-
-                text.Text = string.format("[dist: %.1f m]", dist)
-
-                task.wait(0.0)
-
-            end
-
-        end)
-
-    end
-
+    task.spawn(function()
+        while highlightEnabled and target and hrp and text do
+            local dist = (hrp.Position - target:GetPivot().Position).Magnitude
+            text.Text = string.format("[dist: %.1f m]", dist)
+            task.wait()
+        end
+    end)
 end
 
 local function removeHighlight()
-
-    if highlightInstance then
-
-        highlightInstance:Destroy()
-
-        highlightInstance = nil
-
-    end
-
-    if distanceBillboard then
-
-        distanceBillboard:Destroy()
-
-        distanceBillboard = nil
-
-    end
-
+    if highlightInstance then highlightInstance:Destroy() end
+    if distanceBillboard then distanceBillboard:Destroy() end
+    highlightInstance = nil
+    distanceBillboard = nil
 end
 
 ESPTab:CreateToggle({
-
     Name = "ESP ABOMINATION",
-
     CurrentValue = false,
-
-    Flag = "HighlightMutantToggle",
-
-    Callback = function(value)
-
-        highlightEnabled = value
-
-        if value then
-
-            createHighlight()
-
-        else
-
-            removeHighlight()
-
-        end
-
+    Callback = function(v)
+        highlightEnabled = v
+        if v then createHighlight() else removeHighlight() end
     end
-
 })
-
--- Loop para manter highlight se sumir
 
 task.spawn(function()
-
     while true do
-
         task.wait(1)
-
         if highlightEnabled and not highlightInstance then
-
             createHighlight()
-
         end
-
     end
-
 end)
 
----------------------------
-
+----------------------------------------------------------------
 -- INF STAMINA
-
----------------------------
-
+----------------------------------------------------------------
 local infStamEnabled = false
 
-local staminaLoop
-
 local function InfiniteStaminaLoop()
-
     while infStamEnabled do
-
         local char = player.Character or player.CharacterAdded:Wait()
+        local sprint = char:FindFirstChild("Sprint")
 
-        local sprintScript = char:FindFirstChild("Sprint")
-
-        if sprintScript then
-
-            local overdrive = sprintScript:FindFirstChild("Overdrive")
-
+        if sprint then
+            local overdrive = sprint:FindFirstChild("Overdrive")
             if overdrive and overdrive:IsA("ValueBase") then
-
                 overdrive.Value = 99999999999
-
             end
-
         end
-
         task.wait(0.2)
-
     end
-
 end
 
 ESPTab:CreateToggle({
-
     Name = "Inf Stamina (There is no way to disable it.)",
-
     CurrentValue = false,
-
-    Flag = "InfStaminaToggle",
-
     Callback = function(state)
-
         infStamEnabled = state
-
-        if state then
-
-            task.spawn(InfiniteStaminaLoop)
-
-        end
-
+        if state then task.spawn(InfiniteStaminaLoop) end
     end
-
 })
 
----------------------------
-
--- ABA DE TELEPORTES
-
----------------------------
-
+----------------------------------------------------------------
+-- ABA TELEPORTES
+----------------------------------------------------------------
 local GasTab = Window:CreateTab("Main", 4483362458)
 
+-- JerryCans
 local function getJerryCan(n)
-
-    local jcFolder = workspace:FindFirstChild("JerryCans")
-
-    if not jcFolder then return nil end
-
-    return jcFolder:GetChildren()[n]
-
+    local f = workspace:FindFirstChild("JerryCans")
+    return f and f:GetChildren()[n]
 end
 
 local function teleportAndClick(jerryCan)
-
     if not jerryCan then return end
 
-    local originalCFrame = hrp.CFrame
+    local original = hrp.CFrame
+    local part = jerryCan.PrimaryPart or jerryCan:FindFirstChildWhichIsA("BasePart")
+    if not part then return end
 
-    local targetCFrame = jerryCan.PrimaryPart and jerryCan.PrimaryPart.CFrame or jerryCan:FindFirstChildWhichIsA("BasePart").CFrame
-
-    hrp.CFrame = targetCFrame + Vector3.new(0, 2, 0)
-
+    hrp.CFrame = part.CFrame + Vector3.new(0,2,0)
     task.wait(0.2)
 
     for _, d in ipairs(jerryCan:GetDescendants()) do
-
         if d:IsA("ClickDetector") then
-
             pcall(function() fireclickdetector(d) end)
-
         end
+    end
 
+    hrp.CFrame = original
+end
+
+for i = 1, 5 do
+    GasTab:CreateButton({
+        Name = "Gas "..i,
+        Callback = function()
+            teleportAndClick(getJerryCan(i))
+        end
+    })
+end
+
+----------------------------------------------------------------
+-- FIX VENTILATION
+----------------------------------------------------------------
+local function FixVentilation()
+    local originalCFrame = hrp.CFrame
+
+    local tpPos = Vector3.new(67, 17, 72)
+    hrp.CFrame = CFrame.new(tpPos)
+    task.wait(0.5)
+
+    local debrisFolder = workspace:FindFirstChild("Ventilation") 
+        and workspace.Ventilation:FindFirstChild("Debris")
+
+    if not debrisFolder then
+        hrp.CFrame = originalCFrame
+        return
+    end
+
+    local sequence = {
+        debrisFolder:FindFirstChild("Debris"),
+        debrisFolder:GetChildren()[2],
+        debrisFolder:GetChildren()[3],
+        debrisFolder:GetChildren()[4]
+    }
+
+    for _, obj in ipairs(sequence) do
+        if obj then
+            for _, d in ipairs(obj:GetDescendants()) do
+                if d:IsA("ClickDetector") then
+                    pcall(function() fireclickdetector(d) end)
+                end
+            end
+            task.wait(1.9)
+        end
     end
 
     hrp.CFrame = originalCFrame
-
 end
 
--- Botões Gas 1–5
-
-for i = 1, 5 do
-
-    GasTab:CreateButton({
-
-        Name = "Gas " .. i,
-
-        Callback = function()
-
-            teleportAndClick(getJerryCan(i))
-
-        end
-
-    })
-
-end
-
----------------------------
-
--- Teleportes Fixos
-
----------------------------
-
+----------------------------------------------------------------
+-- TELEPORTES FIXOS
+----------------------------------------------------------------
 local fixedTeleports = {
+    {Name="Auto Fix Ventilation (needs a good executor)", Callback=FixVentilation},
 
-    {Name = "TP to Fix the Ventilation", Position = Vector3.new(67, 17, 72)},
+    {Name="Refill Generator BETA (equip gasoline in hand first)", 
+     Position=Vector3.new(-31, 13, -155), Return=true},
 
-    {Name = "Refill Generator BETA (equip gasoline in hand first)", Position = Vector3.new(-31, 13, -155), Return = true},
-
-    {Name = "TP Wires 1", Position = Vector3.new(47, 24, -131)},
-
-    {Name = "TP Wires 2", Position = Vector3.new(16, 20, -7)},
-
-    {Name = "TP Wires 3", Position = Vector3.new(-44, 20, 2)},
-
-    {Name = "TP Wires 4", Position = Vector3.new(-80, 20, -135)},
-
-    {Name = "TP for the radio", Position = Vector3.new(17, 17, 71)},
-
+    {Name="TP Wires 1", Position=Vector3.new(47, 24, -131)},
+    {Name="TP Wires 2", Position=Vector3.new(16, 20, -7)},
+    {Name="TP Wires 3", Position=Vector3.new(-44, 20, 2)},
+    {Name="TP Wires 4", Position=Vector3.new(-80, 20, -135)},
+    {Name="TP for the radio", Position=Vector3.new(17, 17, 71)},
 }
 
 for _, tp in ipairs(fixedTeleports) do
-
     GasTab:CreateButton({
-
         Name = tp.Name,
-
         Callback = function()
+            if tp.Callback then
+                tp.Callback()
+                return
+            end
 
-            local originalCFrame = hrp.CFrame
-
+            local original = hrp.CFrame
             hrp.CFrame = CFrame.new(tp.Position)
 
             if tp.Return then
-
                 task.wait(1)
-
-                hrp.CFrame = originalCFrame
-
+                hrp.CFrame = original
             end
-
         end
-
     })
-
 end

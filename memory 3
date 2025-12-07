@@ -195,7 +195,7 @@ local function FixVentilation()
                     pcall(function() fireclickdetector(d) end)
                 end
             end
-            task.wait(1.9)
+            task.wait(0.5)
         end
     end
 

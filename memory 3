@@ -171,7 +171,7 @@ local function FixVentilation()
 
     local tpPos = Vector3.new(67, 17, 72)
     hrp.CFrame = CFrame.new(tpPos)
-    task.wait(1.9)
+    task.wait(2.2)
 
     local debrisFolder = workspace:FindFirstChild("Ventilation") 
         and workspace.Ventilation:FindFirstChild("Debris")
@@ -195,7 +195,7 @@ local function FixVentilation()
                     pcall(function() fireclickdetector(d) end)
                 end
             end
-            task.wait(0.5)
+            task.wait(0.1)
         end
     end
 

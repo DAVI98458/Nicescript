@@ -171,7 +171,7 @@ local function FixVentilation()
 
     local tpPos = Vector3.new(67, 17, 72)
     hrp.CFrame = CFrame.new(tpPos)
-    task.wait(0.5)
+    task.wait(1.9)
 
     local debrisFolder = workspace:FindFirstChild("Ventilation") 
         and workspace.Ventilation:FindFirstChild("Debris")

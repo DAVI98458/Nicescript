@@ -86,15 +86,6 @@ ESPTab:CreateToggle({
     end
 })
 
-task.spawn(function()
-    while true do
-        task.wait(1)
-        if highlightEnabled and not highlightInstance then
-            createHighlight()
-        end
-    end
-end)
-
 ----------------------------------------------------------------
 -- INF STAMINA
 ----------------------------------------------------------------
@@ -164,46 +155,63 @@ for i = 1, 5 do
 end
 
 ----------------------------------------------------------------
--- FIX VENTILATION FUNCTION
+-- FIX VENTILATION CORRIGIDO
 ----------------------------------------------------------------
+
+-- função nova para acionar tudo de forma confiável
+local function fireAllClickDetectors(object)
+    local cds = {}
+
+    for _, d in ipairs(object:GetDescendants()) do
+        if d:IsA("ClickDetector") then
+            table.insert(cds, d)
+        end
+    end
+
+    for _, cd in ipairs(cds) do
+        task.wait(0.15)
+        pcall(function()
+            fireclickdetector(cd, 3)
+        end)
+    end
+end
+
 local function FixVentilation()
     local originalCFrame = hrp.CFrame
 
+    -- teleporte
     hrp.CFrame = CFrame.new(67, 17, 72)
     task.wait(0.15)
 
-    local debrisFolder = workspace:FindFirstChild("Ventilation") 
-        and workspace.Ventilation:FindFirstChild("Debris")
-
-    if not debrisFolder then
+    local ventilation = workspace:FindFirstChild("Ventilation")
+    if not ventilation then
         hrp.CFrame = originalCFrame
         return
     end
 
+    local debris = ventilation:FindFirstChild("Debris")
+    if not debris then
+        hrp.CFrame = originalCFrame
+        return
+    end
+
+    -- sequência real usada pelo jogo
     local sequence = {
-        debrisFolder:FindFirstChild("Debris"),
-        debrisFolder:GetChildren()[2],
-        debrisFolder:GetChildren()[3],
-        debrisFolder:GetChildren()[4]
+        debris:FindFirstChild("Debris"),
+        debris:GetChildren()[2],
+        debris:GetChildren()[3],
+        debris:GetChildren()[4],
     }
 
+    -- aciona cada etapa com delay confiável
     for _, obj in ipairs(sequence) do
         if obj then
-
-            local detectors = {}
-            for _, d in ipairs(obj:GetDescendants()) do
-                if d:IsA("ClickDetector") then
-                    table.insert(detectors, d)
-                end
-            end
-
-            for _, cd in ipairs(detectors) do
-                pcall(function() fireclickdetector(cd) end)
-                task.wait(0.5)
-            end
+            fireAllClickDetectors(obj)
+            task.wait(1.5)
         end
     end
 
+    -- volta ao lugar
     hrp.CFrame = originalCFrame
 end
 

@@ -13,8 +13,8 @@ end)
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
 local Window = Rayfield:CreateWindow({
-    Name = "Teleport Menu",
-    LoadingTitle = "Teleport System",
+    Name = "The bunker",
+    LoadingTitle = "Loading...",
     LoadingSubtitle = "Shadown_gd",
     ConfigurationSaving = {
         Enabled = true,
@@ -65,7 +65,7 @@ local function createHighlight()
         while highlightEnabled and target and hrp and text do
             local dist = (hrp.Position - target:GetPivot().Position).Magnitude
             text.Text = string.format("[dist: %.1f m]", dist)
-            task.wait()
+            task.wait(0.05)
         end
     end)
 end
@@ -107,7 +107,7 @@ local function InfiniteStaminaLoop()
 end
 
 ESPTab:CreateToggle({
-    Name = "Inf Stamina (There is no way to disable it.)",
+    Name = "Inf Stamina",
     CurrentValue = false,
     Callback = function(state)
         infStamEnabled = state
@@ -155,10 +155,8 @@ for i = 1, 5 do
 end
 
 ----------------------------------------------------------------
--- FIX VENTILATION CORRIGIDO
+-- FUNÇÃO AUXILIAR PARA ACIONAR CLICKDETECTORS
 ----------------------------------------------------------------
-
--- função nova para acionar tudo de forma confiável
 local function fireAllClickDetectors(object)
     local cds = {}
 
@@ -176,10 +174,12 @@ local function fireAllClickDetectors(object)
     end
 end
 
+----------------------------------------------------------------
+-- FIX VENTILATION CORRIGIDO
+----------------------------------------------------------------
 local function FixVentilation()
     local originalCFrame = hrp.CFrame
 
-    -- teleporte
     hrp.CFrame = CFrame.new(67, 17, 72)
     task.wait(0.15)
 
@@ -195,7 +195,6 @@ local function FixVentilation()
         return
     end
 
-    -- sequência real usada pelo jogo
     local sequence = {
         debris:FindFirstChild("Debris"),
         debris:GetChildren()[2],
@@ -203,7 +202,6 @@ local function FixVentilation()
         debris:GetChildren()[4],
     }
 
-    -- aciona cada etapa com delay confiável
     for _, obj in ipairs(sequence) do
         if obj then
             fireAllClickDetectors(obj)
@@ -211,8 +209,46 @@ local function FixVentilation()
         end
     end
 
-    -- volta ao lugar
     hrp.CFrame = originalCFrame
+end
+
+----------------------------------------------------------------
+-- REFILL GENERATOR COMPLETO
+----------------------------------------------------------------
+local function RefillGenerator()
+    local char = player.Character or player.CharacterAdded:Wait()
+    local root = char:WaitForChild("HumanoidRootPart")
+
+    local originalPos = root.CFrame
+    local generatorTP = CFrame.new(-31, 13, -155)
+
+    root.CFrame = generatorTP
+    task.wait(0.15)
+
+    local shack = workspace:FindFirstChild("Shack")
+    if not shack then
+        root.CFrame = originalPos
+        return
+    end
+
+    local generator = shack:FindFirstChild("Generator")
+    if not generator then
+        root.CFrame = originalPos
+        return
+    end
+
+    for i = 1, 3 do
+        for _, obj in ipairs(generator:GetChildren()) do
+            local cd = obj:FindFirstChildWhichIsA("ClickDetector")
+            if cd then
+                pcall(function() fireclickdetector(cd) end)
+                task.wait(0.1)
+            end
+        end
+    end
+
+    task.wait(1)
+    root.CFrame = originalPos
 end
 
 ----------------------------------------------------------------
@@ -221,8 +257,7 @@ end
 local fixedTeleports = {
     {Name="Auto Fix Ventilation(needs a good executor and low ping)", Callback=FixVentilation},
 
-    {Name="Refill Generator BETA (needs gas equipped)", 
-     Position=Vector3.new(-31, 13, -155), Return=true},
+    {Name="Refill Generator BETA (needs gas equipped)", Callback=RefillGenerator},
 
     {Name="TP Wires 1", Position=Vector3.new(47, 24, -131)},
     {Name="TP Wires 2", Position=Vector3.new(16, 20, -7)},

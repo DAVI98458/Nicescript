@@ -94,6 +94,49 @@ FarmTab:CreateButton({
     Callback = CreateSafeZone
 })
 
+--======== BOTÃO DISABLE COLD (Temperature) ========
+
+FarmTab:CreateButton({
+    Name = "Disable Cold (Temperature)",
+    Callback = function()
+
+        local Players = game:GetService("Players")
+        local player = Players.LocalPlayer
+
+        local function tryDisable()
+            local charFolder = workspace:FindFirstChild(player.Name)
+            if not charFolder then
+                warn("script not available for this ID.")
+                return
+            end
+
+            local temperature = charFolder:FindFirstChild("Temperature")
+            if not temperature then
+                warn("Objeto 'Temperature' não encontrado dentro da pasta do jogador.")
+                return
+            end
+
+            -- Caso seja um objeto que tenha a propriedade Disabled
+            if temperature:IsA("Script") or temperature:IsA("LocalScript") then
+                temperature.Disabled = true
+            elseif temperature:IsA("BoolValue") then
+                temperature.Value = true
+            else
+                warn("O objeto existe, mas não possui propriedade Disabled.")
+            end
+        end
+
+        -- Executa ao iniciar
+        tryDisable()
+
+        -- Caso o jogador respawne
+        player.CharacterAdded:Connect(function()
+            task.wait(1)
+            tryDisable()
+        end)
+    end
+})
+
 --======== ABA EXTRA ========
 local ExtraTab = Window:CreateTab("Extra", 4483362458)
 

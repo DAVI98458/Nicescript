@@ -164,14 +164,13 @@ for i = 1, 5 do
 end
 
 ----------------------------------------------------------------
--- FIX VENTILATION
+-- FIX VENTILATION (DELAY 1.5s)
 ----------------------------------------------------------------
 local function FixVentilation()
     local originalCFrame = hrp.CFrame
 
-    local tpPos = Vector3.new(67, 17, 72)
-    hrp.CFrame = CFrame.new(tpPos)
-    task.wait(1.9)
+    hrp.CFrame = CFrame.new(67, 17, 72)
+    task.wait(0.15)
 
     local debrisFolder = workspace:FindFirstChild("Ventilation") 
         and workspace.Ventilation:FindFirstChild("Debris")
@@ -190,12 +189,18 @@ local function FixVentilation()
 
     for _, obj in ipairs(sequence) do
         if obj then
+
+            local detectors = {}
             for _, d in ipairs(obj:GetDescendants()) do
                 if d:IsA("ClickDetector") then
-                    pcall(function() fireclickdetector(d) end)
+                    table.insert(detectors, d)
                 end
             end
-            task.wait(0.7)
+
+            for _, cd in ipairs(detectors) do
+                pcall(function() fireclickdetector(cd) end)
+                task.wait(1.7) -- SEU DELAY AQUI
+            end
         end
     end
 
@@ -206,15 +211,16 @@ end
 -- TELEPORTES FIXOS
 ----------------------------------------------------------------
 local fixedTeleports = {
-    {Name="Auto Fix Ventilation (needs a good executor and low ping)", Callback=FixVentilation},
+    {Name="Auto Fix Ventilation", Callback=FixVentilation},
 
-    {Name="Refill Generator BETA (equip gasoline in hand first)", 
+    {Name="Refill Generator BETA (needs gas equipped)", 
      Position=Vector3.new(-31, 13, -155), Return=true},
 
     {Name="TP Wires 1", Position=Vector3.new(47, 24, -131)},
     {Name="TP Wires 2", Position=Vector3.new(16, 20, -7)},
     {Name="TP Wires 3", Position=Vector3.new(-44, 20, 2)},
     {Name="TP Wires 4", Position=Vector3.new(-80, 20, -135)},
+
     {Name="TP for the radio", Position=Vector3.new(17, 17, 71)},
 }
 

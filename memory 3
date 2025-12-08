@@ -242,7 +242,7 @@ local function RefillGenerator()
             local cd = obj:FindFirstChildWhichIsA("ClickDetector")
             if cd then
                 pcall(function() fireclickdetector(cd) end)
-                task.wait(0.1)
+                task.wait(3)
             end
         end
     end

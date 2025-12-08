@@ -199,7 +199,7 @@ local function FixVentilation()
 
             for _, cd in ipairs(detectors) do
                 pcall(function() fireclickdetector(cd) end)
-                task.wait(1.7) -- SEU DELAY AQUI
+                task.wait(0.5)
             end
         end
     end

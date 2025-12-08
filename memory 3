@@ -171,7 +171,7 @@ local function FixVentilation()
 
     local tpPos = Vector3.new(67, 17, 72)
     hrp.CFrame = CFrame.new(tpPos)
-    task.wait(2.2)
+    task.wait(1.9)
 
     local debrisFolder = workspace:FindFirstChild("Ventilation") 
         and workspace.Ventilation:FindFirstChild("Debris")
@@ -195,7 +195,7 @@ local function FixVentilation()
                     pcall(function() fireclickdetector(d) end)
                 end
             end
-            task.wait(0.1)
+            task.wait(0.7)
         end
     end
 
@@ -206,7 +206,7 @@ end
 -- TELEPORTES FIXOS
 ----------------------------------------------------------------
 local fixedTeleports = {
-    {Name="Auto Fix Ventilation (needs a good executor)", Callback=FixVentilation},
+    {Name="Auto Fix Ventilation (needs a good executor and low ping)", Callback=FixVentilation},
 
     {Name="Refill Generator BETA (equip gasoline in hand first)", 
      Position=Vector3.new(-31, 13, -155), Return=true},

@@ -65,7 +65,7 @@ local function createHighlight()
         while highlightEnabled and target and hrp and text do
             local dist = (hrp.Position - target:GetPivot().Position).Magnitude
             text.Text = string.format("[dist: %.1f m]", dist)
-            task.wait(0.05)
+            task.wait()
         end
     end)
 end

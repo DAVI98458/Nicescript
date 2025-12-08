@@ -255,9 +255,9 @@ end
 -- TELEPORTES FIXOS
 ----------------------------------------------------------------
 local fixedTeleports = {
-    {Name="Auto Fix Ventilation(needs a good executor and low ping)", Callback=FixVentilation},
+    {Name="Auto Fix Ventilation (needs a good executor and low ping)", Callback=FixVentilation},
 
-    {Name="Refill Generator BETA (needs gas equipped)", Callback=RefillGenerator},
+    {Name="Refill Generator (needs gas equipped)", Callback=RefillGenerator},
 
     {Name="TP Wires 1", Position=Vector3.new(47, 24, -131)},
     {Name="TP Wires 2", Position=Vector3.new(16, 20, -7)},

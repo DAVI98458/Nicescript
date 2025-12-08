@@ -164,7 +164,7 @@ for i = 1, 5 do
 end
 
 ----------------------------------------------------------------
--- FIX VENTILATION (DELAY 1.5s)
+-- FIX VENTILATION FUNCTION
 ----------------------------------------------------------------
 local function FixVentilation()
     local originalCFrame = hrp.CFrame

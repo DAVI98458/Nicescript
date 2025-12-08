@@ -1,4 +1,4 @@
--- Serviços
+vc-- Serviços
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
@@ -219,7 +219,7 @@ end
 -- TELEPORTES FIXOS
 ----------------------------------------------------------------
 local fixedTeleports = {
-    {Name="Auto Fix Ventilation", Callback=FixVentilation},
+    {Name="Auto Fix Ventilation(needs a good executor and low ping)", Callback=FixVentilation},
 
     {Name="Refill Generator BETA (needs gas equipped)", 
      Position=Vector3.new(-31, 13, -155), Return=true},

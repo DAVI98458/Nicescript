@@ -223,7 +223,7 @@ local function RefillGenerator()
     local generatorTP = CFrame.new(-31, 13, -155)
 
     root.CFrame = generatorTP
-    task.wait(0.2)
+    task.wait(0.1)
 
     local shack = workspace:FindFirstChild("Shack")
     if not shack then
@@ -247,7 +247,7 @@ local function RefillGenerator()
         end
     end
 
-    task.wait(0.5)
+    task.wait(0.2)
     root.CFrame = originalPos
 end
 

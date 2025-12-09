@@ -223,7 +223,7 @@ local function RefillGenerator()
     local generatorTP = CFrame.new(-31, 13, -155)
 
     root.CFrame = generatorTP
-    task.wait()
+    task.wait(0.2)
 
     local shack = workspace:FindFirstChild("Shack")
     if not shack then
@@ -237,17 +237,17 @@ local function RefillGenerator()
         return
     end
 
-    for i = 1, 3 do
+    for i = 1, 2 do
         for _, obj in ipairs(generator:GetChildren()) do
             local cd = obj:FindFirstChildWhichIsA("ClickDetector")
             if cd then
                 pcall(function() fireclickdetector(cd) end)
-                task.wait(3)
+                task.wait()
             end
         end
     end
 
-    task.wait(1.5)
+    task.wait(0.5)
     root.CFrame = originalPos
 end
 

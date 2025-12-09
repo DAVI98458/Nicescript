@@ -247,7 +247,7 @@ local function RefillGenerator()
         end
     end
 
-    task.wait(0.5)
+    task.wait(0.7)
     root.CFrame = originalPos
 end
 

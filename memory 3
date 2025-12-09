@@ -134,7 +134,7 @@ local function teleportAndClick(jerryCan)
     if not part then return end
 
     hrp.CFrame = part.CFrame + Vector3.new(0,2,0)
-    task.wait(0.2)
+    task.wait(0.3)
 
     for _, d in ipairs(jerryCan:GetDescendants()) do
         if d:IsA("ClickDetector") then
@@ -247,7 +247,7 @@ local function RefillGenerator()
         end
     end
 
-    task.wait(0.1)
+    task.wait(0.5)
     root.CFrame = originalPos
 end
 

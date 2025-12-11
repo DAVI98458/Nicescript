@@ -1,9 +1,4 @@
-task.wait(1)
-pcall(function()
-loadstring(game:HttpGet("https://raw.githubusercontent.com/DAVI98458/downloads/refs/heads/main/Relays"))()
-end)
-
---// 🔫 SCRIPT GET AMMO FIXADO E OTIMIZADO
+--// 🔫 SCRIPT GET AMMO FIXED E OTIMIZADO
 
 local Players = game:GetService("Players")
 

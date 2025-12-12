@@ -1,4 +1,6 @@
--- Serviços
+--========================================================--
+-- SERVIÇOS & PLAYER
+--========================================================--
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
@@ -9,7 +11,9 @@ player.CharacterAdded:Connect(function(char)
     hrp = char:WaitForChild("HumanoidRootPart")
 end)
 
--- Rayfield UI
+--========================================================--
+-- RAYFIELD
+--========================================================--
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
 local Window = Rayfield:CreateWindow({
@@ -22,12 +26,14 @@ local Window = Rayfield:CreateWindow({
     }
 })
 
-----------------------------------------------------------------
--- ABA ESP
-----------------------------------------------------------------
+--========================================================--
+-- ABA "EXTRA" (ESP + INF STAMINA)
+--========================================================--
 local ESPTab = Window:CreateTab("Extra", 4483362458)
 
--- Highlight
+------------------------------------------------------------
+-- ESP do Abomination (igual ao seu original)
+------------------------------------------------------------
 local highlightEnabled = false
 local highlightInstance
 local distanceBillboard
@@ -86,9 +92,9 @@ ESPTab:CreateToggle({
     end
 })
 
-----------------------------------------------------------------
+------------------------------------------------------------
 -- INF STAMINA
-----------------------------------------------------------------
+------------------------------------------------------------
 local infStamEnabled = false
 
 local function InfiniteStaminaLoop()
@@ -115,12 +121,14 @@ ESPTab:CreateToggle({
     end
 })
 
-----------------------------------------------------------------
--- ABA TELEPORTES
-----------------------------------------------------------------
-local GasTab = Window:CreateTab("Main", 4483362458)
+--========================================================--
+-- ABA "MAIN" (GAS, FIX VENTILATION, REFILL GENERATOR)
+--========================================================--
+local Main = Window:CreateTab("Main", 4483362458)
 
+------------------------------------------------------------
 -- JerryCans
+------------------------------------------------------------
 local function getJerryCan(n)
     local f = workspace:FindFirstChild("JerryCans")
     return f and f:GetChildren()[n]
@@ -145,8 +153,8 @@ local function teleportAndClick(jerryCan)
     hrp.CFrame = original
 end
 
-for i = 1, 5 do
-    GasTab:CreateButton({
+for i=1,5 do
+    Main:CreateButton({
         Name = "Gas "..i,
         Callback = function()
             teleportAndClick(getJerryCan(i))
@@ -154,67 +162,47 @@ for i = 1, 5 do
     })
 end
 
-----------------------------------------------------------------
--- FUNÇÃO AUXILIAR PARA ACIONAR CLICKDETECTORS
-----------------------------------------------------------------
+------------------------------------------------------------
+-- Função auxiliar
+------------------------------------------------------------
 local function fireAllClickDetectors(object)
-    local cds = {}
-
     for _, d in ipairs(object:GetDescendants()) do
         if d:IsA("ClickDetector") then
-            table.insert(cds, d)
+            pcall(function()
+                fireclickdetector(d, 3)
+            end)
         end
-    end
-
-    for _, cd in ipairs(cds) do
-        task.wait(0.1)
-        pcall(function()
-            fireclickdetector(cd, 3)
-        end)
     end
 end
 
-----------------------------------------------------------------
--- FIX VENTILATION CORRIGIDO
-----------------------------------------------------------------
+------------------------------------------------------------
+-- FIX VENTILATION (corrigido)
+------------------------------------------------------------
 local function FixVentilation()
-    local originalCFrame = hrp.CFrame
+    local original = hrp.CFrame
 
     hrp.CFrame = CFrame.new(67, 17, 72)
-    task.wait(0.15)
+    task.wait(0.2)
 
-    local ventilation = workspace:FindFirstChild("Ventilation")
-    if not ventilation then
-        hrp.CFrame = originalCFrame
-        return
-    end
+    local vent = workspace:FindFirstChild("Ventilation")
+    if not vent then hrp.CFrame = original return end
 
-    local debris = ventilation:FindFirstChild("Debris")
-    if not debris then
-        hrp.CFrame = originalCFrame
-        return
-    end
+    local debris = vent:FindFirstChild("Debris")
+    if not debris then hrp.CFrame = original return end
 
-    local sequence = {
-        debris:FindFirstChild("Debris"),
-        debris:GetChildren()[2],
-        debris:GetChildren()[3],
-        debris:GetChildren()[4],
-    }
+    local sequence = debris:GetChildren()
 
     for _, obj in ipairs(sequence) do
-        if obj then
-            fireAllClickDetectors(obj)
-            task.wait(1.5)
-        end
+        fireAllClickDetectors(obj)
+        task.wait(1.5)
     end
 
-    hrp.CFrame = originalCFrame
+    hrp.CFrame = original
 end
 
-----------------------------------------------------------------
--- REFILL GENERATOR COMPLETO
-----------------------------------------------------------------
+------------------------------------------------------------
+-- REFILL GENERATOR (correto)
+------------------------------------------------------------
 local function RefillGenerator()
     local char = player.Character or player.CharacterAdded:Wait()
     local root = char:WaitForChild("HumanoidRootPart")
@@ -226,16 +214,10 @@ local function RefillGenerator()
     task.wait()
 
     local shack = workspace:FindFirstChild("Shack")
-    if not shack then
-        root.CFrame = originalPos
-        return
-    end
+    if not shack then root.CFrame = originalPos return end
 
     local generator = shack:FindFirstChild("Generator")
-    if not generator then
-        root.CFrame = originalPos
-        return
-    end
+    if not generator then root.CFrame = originalPos return end
 
     for i = 1, 3 do
         for _, obj in ipairs(generator:GetChildren()) do
@@ -251,13 +233,24 @@ local function RefillGenerator()
     root.CFrame = originalPos
 end
 
-----------------------------------------------------------------
--- TELEPORTES FIXOS
-----------------------------------------------------------------
-local fixedTeleports = {
-    {Name="Auto Fix Ventilation (needs a good executor and low ping)", Callback=FixVentilation},
+--========================================================--
+-- HIGHLIGHT NO Smooth Block Model
+--========================================================--
+local highlight2 = Instance.new("Highlight")
+highlight2.FillColor = Color3.fromRGB(255,255,0)
+highlight2.OutlineColor = Color3.fromRGB(255,255,0)
+highlight2.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
 
-    {Name="Refill Generator (needs gas equipped and low ping)", Callback=RefillGenerator},
+local target2 = workspace:GetChildren()[74]
+highlight2.Adornee = target2
+highlight2.Parent = target2
+
+--========================================================--
+-- TELEPORTES FIXOS
+--========================================================--
+local fixedTeleports = {
+    {Name="Auto Fix Ventilation [You need a good executor and low ping]", Callback=FixVentilation},
+    {Name="Refill Generator [needs low ping]", Callback=RefillGenerator},
 
     {Name="TP Wires 1", Position=Vector3.new(47, 24, -131)},
     {Name="TP Wires 2", Position=Vector3.new(16, 20, -7)},
@@ -268,7 +261,7 @@ local fixedTeleports = {
 }
 
 for _, tp in ipairs(fixedTeleports) do
-    GasTab:CreateButton({
+    Main:CreateButton({
         Name = tp.Name,
         Callback = function()
             if tp.Callback then
@@ -278,11 +271,6 @@ for _, tp in ipairs(fixedTeleports) do
 
             local original = hrp.CFrame
             hrp.CFrame = CFrame.new(tp.Position)
-
-            if tp.Return then
-                task.wait(1)
-                hrp.CFrame = original
-            end
         end
     })
 end

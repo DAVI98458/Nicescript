@@ -33,7 +33,7 @@ local teleportPositions = {
 
 local REMOTE_LOOP_DURATION = 3
 
-local TELEPORT_INTERVAL = 0
+local TELEPORT_INTERVAL = 0.1
 
 local FIRE_LOOP_STEP = 0
 

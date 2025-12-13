@@ -405,7 +405,7 @@ task.spawn(function()
 
     while true do
 
-        task.wait(0.5)
+        task.wait(120)
 
         if mutantHL then mutantHL.Adornee = mutant end
 

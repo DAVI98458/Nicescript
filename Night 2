@@ -1,3 +1,6 @@
+----------------------------------------------------------------
+-- LOAD EXTRA SCRIPT
+----------------------------------------------------------------
 task.wait(0.5)
 pcall(function()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/DAVI98458/Nicescript/refs/heads/main/game%20happy", true))()
@@ -19,14 +22,14 @@ local Window = Rayfield:CreateWindow({
 })
 
 ----------------------------------------------------------------
--- ABAS
+-- TABS
 ----------------------------------------------------------------
 local MainTab   = Window:CreateTab("Main", 4483362458)
 local PersonTab = Window:CreateTab("Person", 4483362458)
 local MiscTab   = Window:CreateTab("Misc random functions also", 4483362458)
 
 ----------------------------------------------------------------
--- SERVIÇOS
+-- SERVICES
 ----------------------------------------------------------------
 local Players = game:GetService("Players")
 local player  = Players.LocalPlayer
@@ -34,7 +37,23 @@ local Workspace = game:GetService("Workspace")
 local RS = game:GetService("ReplicatedStorage")
 
 ----------------------------------------------------------------
--- FUNÇÕES BÁSICAS
+-- SAFE ZONE WHITELIST
+----------------------------------------------------------------
+local SafeZoneWhitelist = {
+"lindao_gojo3"
+}
+
+local function IsWhitelisted()
+    for _, name in ipairs(SafeZoneWhitelist) do
+        if player.Name == name then
+            return true
+        end
+    end
+    return false
+end
+
+----------------------------------------------------------------
+-- BASIC FUNCTIONS
 ----------------------------------------------------------------
 local function teleportTo(position)
     local character = player.Character or player.CharacterAdded:Wait()
@@ -83,7 +102,7 @@ MainTab:CreateButton({
 })
 
 ----------------------------------------------------------------
--- ANTI-VENT
+-- ANTI-VENT (ORIGINAL)
 ----------------------------------------------------------------
 MainTab:CreateButton({
     Name = "Anti-Vent",
@@ -121,7 +140,7 @@ MainTab:CreateToggle({
 })
 
 ----------------------------------------------------------------
--- AUTO WIRE
+-- AUTO WIRE (WORKING VERSION)
 ----------------------------------------------------------------
 local connections = {}
 local db = false
@@ -271,18 +290,31 @@ MiscTab:CreateToggle({
     end
 })
 
+----------------------------------------------------------------
+-- SAFE ZONE (WHITELIST)
+----------------------------------------------------------------
 MiscTab:CreateButton({
     Name = "Safe Zone",
     Callback = function()
-        Rayfield:Notify({
-            Title = "Safe Zone",
-            Content = "I'll unlock it when the server reaches 300 members",
-            Duration = 6,
-            Image = 4483362458
-        })
+        if IsWhitelisted() then
+            teleportTo(Vector3.new(8, -105, 177))
+            Rayfield:Notify({
+                Title = "Safe Zone",
+                Content = "You were on the whitelist and were allowed to use the safe zone in advance",
+                Duration = 6,
+                Image = 4483362458
+            })
+        else
+            Rayfield:Notify({
+                Title = "Safe Zone",
+                Content = "You're not on the Night 2 whitelist and you have to wait for my Discord server to reach 300 members",
+                Duration = 6,
+                Image = 4483362458
+            })
+        end
     end
 })
 
 ----------------------------------------------------------------
--- FIM
+-- END
 ----------------------------------------------------------------

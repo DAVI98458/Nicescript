@@ -69,7 +69,7 @@ end
 -- REFILL GENERATOR
 ----------------------------------------------------------------
 MainTab:CreateButton({
-    Name = "Refill generator",
+    Name = "Refill power",
     Callback = function()
         local char = player.Character or player.CharacterAdded:Wait()
         local hrp = char:WaitForChild("HumanoidRootPart")

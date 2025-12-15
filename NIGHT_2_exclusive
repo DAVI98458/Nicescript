@@ -44,7 +44,7 @@ local Lighting  = game:GetService("Lighting")
 -- SAFE ZONE WHITELIST
 ----------------------------------------------------------------
 local SafeZoneWhitelist = {
-    "lindao_gojo3"
+    "lindao_gojo3","jef123487643762856"
 }
 
 local function IsWhitelisted()

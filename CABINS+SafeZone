@@ -92,9 +92,9 @@ local function grabAllGas()
 
             if click and part then
                 hrp.CFrame = part.CFrame + Vector3.new(0, 2, 0)
-                task.wait(0.5)
+                task.wait(0.2)
                 fireclickdetector(click)
-                task.wait(0.5)
+                task.wait(0.2)
             end
         end
     end
@@ -120,9 +120,9 @@ local function grabAllItems()
 
             if parent then
                 hrp.CFrame = parent.CFrame + Vector3.new(0, 2, 0)
-                task.wait(0.5)
+                task.wait(0.2)
                 fireclickdetector(obj)
-                task.wait(0.5)
+                task.wait(0.2)
             end
         end
     end

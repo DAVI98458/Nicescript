@@ -1,7 +1,7 @@
--- Carrega a biblioteca Rayfield
+-- Carrega Rayfield
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
--- Cria janela/interface
+-- Janela
 local Window = Rayfield:CreateWindow({
     Name = "Teleport Menu night 3 cabins",
     LoadingTitle = "Teleport System",
@@ -12,57 +12,122 @@ local Window = Rayfield:CreateWindow({
     }
 })
 
--- Mostra notificação inicial
-Rayfield:Notify({
-    Title = "credits: juão",
-    Content = "bypassed anti-cheat (It's not 100% safe)",
-    Duration = 5,
-    Image = 4483362458
-})
-
--- Aguarda 1 segundo e executa o loadstring remoto
-task.delay(1, function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/DAVI98458/Nicescript/refs/heads/main/game%20happy", true))()
-end)
-
--- Cria aba principal
+-- Aba
 local TeleportTab = Window:CreateTab("Teleports", 4483362458)
 
--- Serviços e função de teleporte
+-- Serviços
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+
 local player = Players.LocalPlayer
 
-local function teleportTo(position)
-    local character = player.Character or player.CharacterAdded:Wait()
-    local root = character:FindFirstChild("HumanoidRootPart")
-    if root then
-        root.CFrame = CFrame.new(position)
-    end
+-- Utilidades
+local function getHRP()
+    local char = player.Character or player.CharacterAdded:Wait()
+    return char:WaitForChild("HumanoidRootPart")
 end
 
--- Função de noclip
-local noclipActive = false
+local function teleportTo(pos)
+    getHRP().CFrame = CFrame.new(pos)
+end
+
+-- =========================
+-- SAFE ZONE + NOCLIP
+-- =========================
 local noclipConnection
 
 local function enableNoclip()
-    if noclipActive then return end
-    noclipActive = true
+    if noclipConnection then return end
 
     noclipConnection = RunService.Stepped:Connect(function()
-        local character = player.Character
-        if character then
-            for _, part in pairs(character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = false
+        local char = player.Character
+        if char then
+            for _, v in ipairs(char:GetDescendants()) do
+                if v:IsA("BasePart") then
+                    v.CanCollide = false
                 end
             end
         end
     end)
 end
 
--- Botões de teleporte
+local function disableNoclip()
+    if noclipConnection then
+        noclipConnection:Disconnect()
+        noclipConnection = nil
+    end
+end
+
+local function goToSafeZone()
+    teleportTo(Vector3.new(-54, 15, 252))
+    enableNoclip()
+end
+
+-- =========================
+-- GRAB ALL GÁS (EXATO)
+-- =========================
+local function grabAllGas()
+    local folder = Workspace:WaitForChild("JerryCans")
+    local hrp = getHRP()
+    local originalCFrame = hrp.CFrame
+
+    local targets = {
+        folder:WaitForChild("JerryCan"),
+        folder:GetChildren()[2],
+        folder:GetChildren()[3],
+        folder:GetChildren()[4]
+    }
+
+    for _, target in ipairs(targets) do
+        if target then
+            local click = target:FindFirstChildWhichIsA("ClickDetector", true)
+            local part = target:FindFirstChildWhichIsA("BasePart", true)
+
+            if click and part then
+                hrp.CFrame = part.CFrame + Vector3.new(0, 2, 0)
+                task.wait(0.5)
+                fireclickdetector(click)
+                task.wait(0.5)
+            end
+        end
+    end
+
+    hrp.CFrame = originalCFrame
+end
+
+-- =========================
+-- GRAB ALL ITEMS (ROBUSTO)
+-- =========================
+local function grabAllItems()
+    local folder = Workspace:WaitForChild("ItemSpots")
+    local hrp = getHRP()
+    local originalCFrame = hrp.CFrame
+
+    for _, obj in ipairs(folder:GetDescendants()) do
+        if obj:IsA("ClickDetector") then
+            local parent = obj.Parent
+
+            while parent and not parent:IsA("BasePart") do
+                parent = parent.Parent
+            end
+
+            if parent then
+                hrp.CFrame = parent.CFrame + Vector3.new(0, 2, 0)
+                task.wait(0.5)
+                fireclickdetector(obj)
+                task.wait(0.5)
+            end
+        end
+    end
+
+    hrp.CFrame = originalCFrame
+end
+
+-- =========================
+-- BOTÕES
+-- =========================
+
 TeleportTab:CreateButton({
     Name = "Cabin 1",
     Callback = function()
@@ -98,22 +163,23 @@ TeleportTab:CreateButton({
     end
 })
 
--- Botão de Safe Zone com noclip e chão invisível
 TeleportTab:CreateButton({
-    Name = "Safe Zone (super safe!)[Do not move when teleported]",
+    Name = "Safe Zone",
     Callback = function()
-        teleportTo(Vector3.new(-54, 15, 252))
-        enableNoclip()
+        goToSafeZone()
+    end
+})
 
-        if not Workspace:FindFirstChild("SafeZoneFloor") then
-            local floor = Instance.new("Part")
-            floor.Name = "SafeZoneFloor"
-            floor.Size = Vector3.new(20, 1, 20)
-            floor.Position = Vector3.new(-54, 50, 252)
-            floor.Anchored = true
-            floor.CanCollide = true
-            floor.Transparency = 1
-            floor.Parent = Workspace
-        end
+TeleportTab:CreateButton({
+    Name = "Grab all gás",
+    Callback = function()
+        grabAllGas()
+    end
+})
+
+TeleportTab:CreateButton({
+    Name = "Grab all items on the map",
+    Callback = function()
+        grabAllItems()
     end
 })

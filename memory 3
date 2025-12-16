@@ -1,5 +1,5 @@
 --========================================================--
--- SERVIÇOS & PLAYER
+-- SERVIÇOS PLAYER
 --========================================================--
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer

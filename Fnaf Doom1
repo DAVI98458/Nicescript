@@ -7,9 +7,9 @@ local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 -- WINDOW
 ----------------------------------------------------------------
 local Window = Rayfield:CreateWindow({
-    Name = "Fnaf Doom 1",
-    LoadingTitle = "Fnaf Doom 1",
-    LoadingSubtitle = "Generator Control",
+    Name = "Fnaf Doom 1 Beta",
+    LoadingTitle = "Fnaf Doom 1 Beta",
+    LoadingSubtitle = "By: shadown_gd",
     ConfigurationSaving = { Enabled = false }
 })
 

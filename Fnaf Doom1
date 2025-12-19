@@ -1,1 +1,193 @@
+----------------------------------------------------------------
+-- LOAD RAYFIELD
+----------------------------------------------------------------
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
+----------------------------------------------------------------
+-- WINDOW
+----------------------------------------------------------------
+local Window = Rayfield:CreateWindow({
+    Name = "Fnaf Doom 1",
+    LoadingTitle = "Fnaf Doom 1",
+    LoadingSubtitle = "Generator Control",
+    ConfigurationSaving = { Enabled = false }
+})
+
+----------------------------------------------------------------
+-- TAB
+----------------------------------------------------------------
+local MainTab = Window:CreateTab("main")
+
+----------------------------------------------------------------
+-- SERVICES
+----------------------------------------------------------------
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+----------------------------------------------------------------
+-- FLAGS
+----------------------------------------------------------------
+local systemEnabled = false
+local highlightEnabled = false
+local safeZoneEnabled = false
+
+----------------------------------------------------------------
+-- TIMING / POSITIONS
+----------------------------------------------------------------
+local TELEPORT_DELAY = 0.2
+local GERADOR_POSITION = CFrame.new(200, 4, -75)
+local SAFEZONE_FINAL = CFrame.new(111, 4, -183)
+
+----------------------------------------------------------------
+-- HIGHLIGHT STORAGE
+----------------------------------------------------------------
+local highlights = {}
+
+----------------------------------------------------------------
+-- SAFE ZONE (SEM RETORNO)
+----------------------------------------------------------------
+local function executarSafeZone()
+    if not safeZoneEnabled then return end
+
+    local character = player.Character or player.CharacterAdded:Wait()
+    local hrp = character:WaitForChild("HumanoidRootPart")
+
+    local Buttons = workspace.Game.Buttons
+
+    local prompts = {
+        Buttons.Door3.Button.ProximityPrompt,
+        Buttons.Door4.Button.ProximityPrompt,
+        Buttons.Door5.Button.ProximityPrompt,
+        Buttons.Door6.Button.ProximityPrompt
+    }
+
+    for _, prompt in ipairs(prompts) do
+        local part = prompt.Parent
+        hrp.CFrame = part.CFrame + Vector3.new(0, 3, 0)
+        task.wait(TELEPORT_DELAY)
+        fireproximityprompt(prompt)
+        task.wait(0.2)
+    end
+
+    -- TELEPORTE FINAL (PONTO DEFINITIVO)
+    hrp.CFrame = SAFEZONE_FINAL
+end
+
+----------------------------------------------------------------
+-- GERADOR
+----------------------------------------------------------------
+local function executarGerador(Key, Prompt)
+    if not systemEnabled then return end
+    if not Key:IsA("BasePart") then return end
+
+    local character = player.Character or player.CharacterAdded:Wait()
+    local hrp = character:WaitForChild("HumanoidRootPart")
+    local originalCFrame = hrp.CFrame
+
+    -- Key
+    hrp.CFrame = Key.CFrame + Vector3.new(0, 3, 0)
+    task.wait(TELEPORT_DELAY)
+
+    -- Gerador
+    hrp.CFrame = GERADOR_POSITION
+    task.wait(TELEPORT_DELAY)
+    fireproximityprompt(Prompt)
+    task.wait(TELEPORT_DELAY)
+
+    -- Safe zone automático (se ativo)
+    executarSafeZone()
+
+    -- Se Safe Zone NÃO estiver ativo, volta
+    if not safeZoneEnabled then
+        hrp.CFrame = originalCFrame
+    end
+end
+
+----------------------------------------------------------------
+-- HIGHLIGHT
+----------------------------------------------------------------
+local function aplicarHighlights()
+    local pasta = workspace.Game.Animatronics.Animatronics
+    for _, obj in ipairs(pasta:GetChildren()) do
+        if obj:IsA("Model") and not highlights[obj] then
+            local h = Instance.new("Highlight")
+            h.Adornee = obj
+            h.FillTransparency = 0.5
+            h.Parent = obj
+            highlights[obj] = h
+        end
+    end
+end
+
+local function removerHighlights()
+    for _, h in pairs(highlights) do
+        if h then h:Destroy() end
+    end
+    table.clear(highlights)
+end
+
+----------------------------------------------------------------
+-- BUTTON: START GENERATOR
+----------------------------------------------------------------
+MainTab:CreateButton({
+    Name = "Start the generator",
+    Callback = function()
+        if systemEnabled then return end
+        systemEnabled = true
+
+        local Gerador = workspace.Game.Gerador
+        local Prompt = Gerador.ReligarGerador.ProximityPrompt
+
+        local key = Gerador:FindFirstChild("Key")
+        if key then
+            executarGerador(key, Prompt)
+        end
+
+        Gerador.ChildAdded:Connect(function(child)
+            if child.Name == "Key" then
+                task.wait(0.1)
+                executarGerador(child, Prompt)
+            end
+        end)
+
+        Rayfield:Notify({
+            Title = "Generator",
+            Content = "Automatic generator enabled.",
+            Duration = 4
+        })
+    end
+})
+
+----------------------------------------------------------------
+-- TOGGLE: HIGHLIGHT
+----------------------------------------------------------------
+MainTab:CreateToggle({
+    Name = "Highlight Animatronics",
+    CurrentValue = false,
+    Callback = function(v)
+        highlightEnabled = v
+        if v then aplicarHighlights() else removerHighlights() end
+    end
+})
+
+----------------------------------------------------------------
+-- TOGGLE: SAFE ZONE
+----------------------------------------------------------------
+MainTab:CreateToggle({
+    Name = "Safe zone",
+    CurrentValue = false,
+    Callback = function(v)
+        safeZoneEnabled = v
+        if v then
+            executarSafeZone()
+        end
+    end
+})
+
+----------------------------------------------------------------
+-- NOTE
+----------------------------------------------------------------
+MainTab:CreateParagraph({
+    Title = "Note",
+    Content = "No animatronic can be in the bathroom or kitchen, otherwise the safe zone will not function, and On night 1, wait for the cutscene to finish before activating"
+})

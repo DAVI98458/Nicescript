@@ -130,7 +130,7 @@ end
 -- BUTTON: START GENERATOR
 ----------------------------------------------------------------
 MainTab:CreateButton({
-    Name = "Start the generator",
+    Name = "Auto generator (OP)",
     Callback = function()
         if systemEnabled then return end
         systemEnabled = true
@@ -174,7 +174,7 @@ MainTab:CreateToggle({
 -- TOGGLE: SAFE ZONE
 ----------------------------------------------------------------
 MainTab:CreateToggle({
-    Name = "Safe zone",
+    Name = "Safe zone (50% insurance)",
     CurrentValue = false,
     Callback = function(v)
         safeZoneEnabled = v

@@ -1,0 +1,125 @@
+--==================================================
+-- FNAF DOOM 2 BETA - Rayfield Script (REAL FIX)
+--==================================================
+
+-- Serviços
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- HRP seguro
+local function getHRP()
+    local char = player.Character or player.CharacterAdded:Wait()
+    return char:WaitForChild("HumanoidRootPart")
+end
+
+--==================================================
+-- Rayfield
+--==================================================
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "FNAF DOOM 2 BETA",
+    LoadingTitle = "FNAF DOOM 2 BETA",
+    LoadingSubtitle = "By: shadown_gd",
+    ConfigurationSaving = { Enabled = false }
+})
+
+local MainTab = Window:CreateTab("Main", 4483362458)
+
+--==================================================
+-- BOTÃO: Refill the Puppet Box
+--==================================================
+local running = false
+
+MainTab:CreateButton({
+    Name = "Refill the Puppet Box",
+    Callback = function()
+        if running then return end
+        running = true
+
+        task.spawn(function()
+            local hrp = getHRP()
+
+            -- salva posição real
+            local originalCFrame = hrp.CFrame
+
+            -- teleporte
+            hrp.CFrame = CFrame.new(-144, 6, 124)
+            task.wait(0.4)
+
+            local prompt = workspace
+                :WaitForChild("Jogo")
+                :WaitForChild("Puppet")
+                :WaitForChild("Botao")
+                :WaitForChild("Button")
+                :WaitForChild("ProximityPrompt")
+
+            -- garante que o prompt está ativo
+            prompt.Enabled = true
+            prompt.HoldDuration = 0
+
+            -- dispara 6 vezes
+            for i = 1, 5 do
+                if fireproximityprompt then
+                    fireproximityprompt(prompt)
+                end
+                task.wait(0.1)
+            end
+
+            -- espera final para o servidor registrar
+            task.wait(0.10)
+
+            -- volta EXATAMENTE pra posição original
+            hrp.CFrame = originalCFrame
+
+            running = false
+        end)
+    end
+})
+
+--==================================================
+-- TOGGLE: Highlight Animatronics
+--==================================================
+local highlights = {}
+
+local function enableHighlight()
+    local folder = workspace:FindFirstChild("Animatronics")
+    if not folder then return end
+
+    for _, model in ipairs(folder:GetDescendants()) do
+        if model:IsA("Model") and not highlights[model] then
+            local h = Instance.new("Highlight")
+            h.Name = "AnimatronicHighlight"
+            h.FillColor = Color3.fromRGB(255, 0, 0)
+            h.OutlineColor = Color3.fromRGB(255, 0, 0)
+            h.FillTransparency = 1
+            h.OutlineTransparency = 0.2
+            h.Adornee = model
+            h.Parent = model
+
+            highlights[model] = h
+        end
+    end
+end
+
+local function disableHighlight()
+    for model, h in pairs(highlights) do
+        if h then
+            h:Destroy()
+        end
+    end
+    table.clear(highlights)
+end
+
+MainTab:CreateToggle({
+    Name = "Highlight Animatronics",
+    CurrentValue = false,
+    Flag = "HighlightAnimatronics",
+    Callback = function(Value)
+        if Value then
+            enableHighlight()
+        else
+            disableHighlight()
+        end
+    end
+})

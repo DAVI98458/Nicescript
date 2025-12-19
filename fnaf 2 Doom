@@ -1,81 +1,92 @@
 --==================================================
--- FNAF DOOM 2 BETA - Rayfield Script (REAL FIX)
+-- FNAF DOOM 2 BETA - SCRIPT FINAL
 --==================================================
 
 -- Serviços
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
--- HRP seguro
+--==================================================
+-- HumanoidRootPart seguro
+--==================================================
 local function getHRP()
     local char = player.Character or player.CharacterAdded:Wait()
     return char:WaitForChild("HumanoidRootPart")
 end
 
 --==================================================
--- Rayfield
+-- Rayfield Loader
 --==================================================
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
-local Window = Rayfield:CreateWindow({
-    Name = "FNAF DOOM 2 BETA",
-    LoadingTitle = "FNAF DOOM 2 BETA",
-    LoadingSubtitle = "By: shadown_gd",
-    ConfigurationSaving = { Enabled = false }
-})
+local Window =
+    Rayfield:CreateWindow(
+    {
+        Name = "FNAF DOOM 2 BETA",
+        LoadingTitle = "FNAF DOOM 2 BETA",
+        LoadingSubtitle = "By: shadown_gd",
+        ConfigurationSaving = {
+            Enabled = false
+        }
+    }
+)
 
 local MainTab = Window:CreateTab("Main", 4483362458)
 
 --==================================================
 -- BOTÃO: Refill the Puppet Box
 --==================================================
-local running = false
+local refillRunning = false
 
-MainTab:CreateButton({
-    Name = "Refill the Puppet Box",
-    Callback = function()
-        if running then return end
-        running = true
-
-        task.spawn(function()
-            local hrp = getHRP()
-
-            -- salva posição real
-            local originalCFrame = hrp.CFrame
-
-            -- teleporte
-            hrp.CFrame = CFrame.new(-144, 6, 124)
-            task.wait(0.4)
-
-            local prompt = workspace
-                :WaitForChild("Jogo")
-                :WaitForChild("Puppet")
-                :WaitForChild("Botao")
-                :WaitForChild("Button")
-                :WaitForChild("ProximityPrompt")
-
-            -- garante que o prompt está ativo
-            prompt.Enabled = true
-            prompt.HoldDuration = 0
-
-            -- dispara 6 vezes
-            for i = 1, 5 do
-                if fireproximityprompt then
-                    fireproximityprompt(prompt)
-                end
-                task.wait(0.1)
+MainTab:CreateButton(
+    {
+        Name = "Refill the Puppet Box",
+        Callback = function()
+            if refillRunning then
+                return
             end
+            refillRunning = true
 
-            -- espera final para o servidor registrar
-            task.wait(0.10)
+            task.spawn(
+                function()
+                    local hrp = getHRP()
 
-            -- volta EXATAMENTE pra posição original
-            hrp.CFrame = originalCFrame
+                    -- salva posição original
+                    local originalCFrame = hrp.CFrame
 
-            running = false
-        end)
-    end
-})
+                    -- teleporte para o botão
+                    hrp.CFrame = CFrame.new(-144, 6, 124)
+                    task.wait(0.4)
+
+                    local prompt =
+                        workspace:WaitForChild("Jogo"):WaitForChild("Puppet"):WaitForChild("Botao"):WaitForChild(
+                        "Button"
+                    ):WaitForChild("ProximityPrompt")
+
+                    -- garante execução
+                    prompt.Enabled = true
+                    prompt.HoldDuration = 0
+
+                    -- dispara 6 vezes
+                    for i = 1, 6 do
+                        if fireproximityprompt then
+                            fireproximityprompt(prompt)
+                        end
+                        task.wait(0.1)
+                    end
+
+                    -- pequena margem para o servidor registrar
+                    task.wait(0.10)
+
+                    -- volta para posição original
+                    hrp.CFrame = originalCFrame
+
+                    refillRunning = false
+                end
+            )
+        end
+    }
+)
 
 --==================================================
 -- TOGGLE: Highlight Animatronics
@@ -84,26 +95,28 @@ local highlights = {}
 
 local function enableHighlight()
     local folder = workspace:FindFirstChild("Animatronics")
-    if not folder then return end
+    if not folder then
+        return
+    end
 
-    for _, model in ipairs(folder:GetDescendants()) do
-        if model:IsA("Model") and not highlights[model] then
+    for _, obj in ipairs(folder:GetDescendants()) do
+        if obj:IsA("Model") and not highlights[obj] then
             local h = Instance.new("Highlight")
             h.Name = "AnimatronicHighlight"
             h.FillColor = Color3.fromRGB(255, 0, 0)
             h.OutlineColor = Color3.fromRGB(255, 0, 0)
             h.FillTransparency = 1
-            h.OutlineTransparency = 0.2
-            h.Adornee = model
-            h.Parent = model
+            h.OutlineTransparency = 0.5
+            h.Adornee = obj
+            h.Parent = obj
 
-            highlights[model] = h
+            highlights[obj] = h
         end
     end
 end
 
 local function disableHighlight()
-    for model, h in pairs(highlights) do
+    for _, h in pairs(highlights) do
         if h then
             h:Destroy()
         end
@@ -111,15 +124,30 @@ local function disableHighlight()
     table.clear(highlights)
 end
 
-MainTab:CreateToggle({
-    Name = "Highlight Animatronics",
-    CurrentValue = false,
-    Flag = "HighlightAnimatronics",
-    Callback = function(Value)
-        if Value then
-            enableHighlight()
-        else
-            disableHighlight()
+MainTab:CreateToggle(
+    {
+        Name = "Highlight Animatronics",
+        CurrentValue = false,
+        Flag = "HighlightAnimatronics",
+        Callback = function(Value)
+            if Value then
+                enableHighlight()
+            else
+                disableHighlight()
+            end
         end
-    end
-})
+    }
+)
+
+--==================================================
+-- BOTÃO: Safe Zone
+--==================================================
+MainTab:CreateButton(
+    {
+        Name = "Safe Zone",
+        Callback = function()
+            local hrp = getHRP()
+            hrp.CFrame = CFrame.new(-125, 31, 144)
+        end
+    }
+)

@@ -1,12 +1,8 @@
-task.wait(1)
-pcall(function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/DAVI98458/Nicescript/refs/heads/main/game%20happy",true))()
-end)
-
--- Carrega Rayfield
+-- =========================
+-- RAYFIELD
+-- =========================
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
--- Janela
 local Window = Rayfield:CreateWindow({
     Name = "Teleport Menu night 3 cabins",
     LoadingTitle = "Teleport System",
@@ -17,10 +13,12 @@ local Window = Rayfield:CreateWindow({
     }
 })
 
--- Aba
-local TeleportTab = Window:CreateTab("Main", 4483362458)
+-- ÚNICA ABA
+local Tab = Window:CreateTab("Teleports", 4483362458)
 
--- Serviços
+-- =========================
+-- SERVIÇOS
+-- =========================
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
@@ -42,12 +40,11 @@ end
 -- =========================
 -- SAFE ZONE + NOCLIP
 -- =========================
-local noclipConnection
+local noclipConn
 
 local function enableNoclip()
-    if noclipConnection then return end
-
-    noclipConnection = RunService.Stepped:Connect(function()
+    if noclipConn then return end
+    noclipConn = RunService.Stepped:Connect(function()
         local char = player.Character
         if char then
             for _, v in ipairs(char:GetDescendants()) do
@@ -65,7 +62,7 @@ local function goToSafeZone()
 end
 
 -- =========================
--- DISABLED COLD
+-- DISABLE COLD
 -- =========================
 local function disableCold()
     local charFolder = Workspace:FindFirstChild(player.Name)
@@ -87,16 +84,14 @@ player.CharacterAdded:Connect(function()
 end)
 
 -- =========================
--- ADD 100% BATTERY HEATER
+-- HEATER BATTERY
 -- =========================
 local function addHeaterBattery()
     local heater = Workspace:FindFirstChild("Heater")
     if not heater then return end
 
     local battery = heater:FindFirstChild("BatteryValue")
-    if not battery then return end
-
-    if battery:IsA("NumberValue") or battery:IsA("IntValue") then
+    if battery and (battery:IsA("NumberValue") or battery:IsA("IntValue")) then
         battery.Value = 100
     end
 end
@@ -107,7 +102,7 @@ end
 local function grabAllGas()
     local folder = Workspace:WaitForChild("JerryCans")
     local hrp = getHRP()
-    local originalCFrame = hrp.CFrame
+    local original = hrp.CFrame
 
     local targets = {
         folder:WaitForChild("JerryCan"),
@@ -120,7 +115,6 @@ local function grabAllGas()
         if target then
             local click = target:FindFirstChildWhichIsA("ClickDetector", true)
             local part = target:FindFirstChildWhichIsA("BasePart", true)
-
             if click and part then
                 hrp.CFrame = part.CFrame + Vector3.new(0, 2, 0)
                 task.wait(0.2)
@@ -130,7 +124,7 @@ local function grabAllGas()
         end
     end
 
-    hrp.CFrame = originalCFrame
+    hrp.CFrame = original
 end
 
 -- =========================
@@ -139,17 +133,17 @@ end
 local function grabAllItems()
     local folder = Workspace:WaitForChild("ItemSpots")
     local hrp = getHRP()
-    local originalCFrame = hrp.CFrame
+    local original = hrp.CFrame
 
     for _, obj in ipairs(folder:GetDescendants()) do
         if obj:IsA("ClickDetector") then
-            local parent = obj.Parent
-            while parent and not parent:IsA("BasePart") do
-                parent = parent.Parent
+            local part = obj.Parent
+            while part and not part:IsA("BasePart") do
+                part = part.Parent
             end
 
-            if parent then
-                hrp.CFrame = parent.CFrame + Vector3.new(0, 2, 0)
+            if part then
+                hrp.CFrame = part.CFrame + Vector3.new(0, 2, 0)
                 task.wait(0.2)
                 fireclickdetector(obj)
                 task.wait(0.2)
@@ -157,78 +151,76 @@ local function grabAllItems()
         end
     end
 
-    hrp.CFrame = originalCFrame
+    hrp.CFrame = original
 end
 
 -- =========================
--- BOTÕES
+-- AUTO COLLECT GIFTS (OTIMIZADO / SEM LAG)
 -- =========================
-TeleportTab:CreateButton({
-    Name = "Cabin 1",
-    Callback = function()
-        teleportTo(Vector3.new(102, 4, -245))
-    end
-})
+local autoCollect = false
+local processed = {}
 
-TeleportTab:CreateButton({
-    Name = "Cabin 2",
-    Callback = function()
-        teleportTo(Vector3.new(-33, 4, 68))
-    end
-})
+local GiftSpots = Workspace:WaitForChild("GiftSpots")
 
-TeleportTab:CreateButton({
-    Name = "Cabin 3",
-    Callback = function()
-        teleportTo(Vector3.new(-40, 4, 267))
-    end
-})
+local function handleGiftClickDetector(cd)
+    if processed[cd] or not autoCollect then return end
+    processed[cd] = true
 
-TeleportTab:CreateButton({
-    Name = "Cabin 4",
-    Callback = function()
-        teleportTo(Vector3.new(231, 4, 243))
-    end
-})
+    Rayfield:Notify({
+        Title = "Auto Collect",
+        Content = "Collecting gifts in 5 or 6 seconds",
+        Duration = 3
+    })
 
-TeleportTab:CreateButton({
-    Name = "Lodge",
-    Callback = function()
-        teleportTo(Vector3.new(-233, 17, 110))
-    end
-})
+    task.delay(5, function()
+        if not autoCollect then return end
 
-TeleportTab:CreateButton({
-    Name = "Safe Zone",
-    Callback = function()
-        goToSafeZone()
-    end
-})
+        local hrp = getHRP()
+        local original = hrp.CFrame
 
-TeleportTab:CreateButton({
-    Name = "Grab all gás",
-    Callback = function()
-        grabAllGas()
-    end
-})
+        local part = cd.Parent
+        while part and not part:IsA("BasePart") do
+            part = part.Parent
+        end
 
-TeleportTab:CreateButton({
-    Name = "Grab all items on the map",
-    Callback = function()
-        grabAllItems()
-    end
-})
+        if part then
+            hrp.CFrame = part.CFrame + Vector3.new(0, 2, 0)
+            task.wait(0.3)
+            fireclickdetector(cd)
+            task.wait(0.3)
+            hrp.CFrame = original
+        end
+    end)
+end
 
-TeleportTab:CreateButton({
-    Name = "Disable cold",
-    Callback = function()
-        disableCold()
+GiftSpots.DescendantAdded:Connect(function(obj)
+    if obj:IsA("ClickDetector") then
+        handleGiftClickDetector(obj)
     end
-})
+end)
 
-TeleportTab:CreateButton({
-    Name = "Add 100% battery in heater",
-    Callback = function()
-        addHeaterBattery()
+-- =========================
+-- BOTÕES (TUDO NA MESMA ABA)
+-- =========================
+Tab:CreateButton({ Name = "Cabin 1", Callback = function() teleportTo(Vector3.new(102,4,-245)) end })
+Tab:CreateButton({ Name = "Cabin 2", Callback = function() teleportTo(Vector3.new(-33,4,68)) end })
+Tab:CreateButton({ Name = "Cabin 3", Callback = function() teleportTo(Vector3.new(-40,4,267)) end })
+Tab:CreateButton({ Name = "Cabin 4", Callback = function() teleportTo(Vector3.new(231,4,243)) end })
+Tab:CreateButton({ Name = "Lodge", Callback = function() teleportTo(Vector3.new(-233,17,110)) end })
+Tab:CreateButton({ Name = "Safe Zone", Callback = goToSafeZone })
+
+Tab:CreateButton({ Name = "Grab all gás", Callback = grabAllGas })
+Tab:CreateButton({ Name = "Grab all items on the map", Callback = grabAllItems })
+Tab:CreateButton({ Name = "Disable cold", Callback = disableCold })
+Tab:CreateButton({ Name = "Add 100% battery in heater", Callback = addHeaterBattery })
+
+Tab:CreateToggle({
+    Name = "Auto Collect Gifts (75% to pick up)",
+    CurrentValue = false,
+    Callback = function(state)
+        autoCollect = state
+        if not state then
+            processed = {}
+        end
     end
 })

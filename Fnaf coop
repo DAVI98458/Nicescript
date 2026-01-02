@@ -14,8 +14,8 @@ local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
 local Window = Rayfield:CreateWindow({
     Name = "FNAF 1 co-op",
-    LoadingTitle = "FNAF 1 co-op",
-    LoadingSubtitle = "Auto Guard System",
+    LoadingTitle = "FNAF 1 co-op Beta",
+    LoadingSubtitle = "by: shadown_gd",
     ConfigurationSaving = { Enabled = false }
 })
 
@@ -25,7 +25,7 @@ local MainTab = Window:CreateTab("Main", 4483362458)
 -- CONFIG
 --==================================================
 local DETECTION_RADIUS = 15
-local CLOSE_DELAY = 2
+local CLOSE_DELAY = 1
 local REMOTE_INTERVAL = 1
 
 --==================================================

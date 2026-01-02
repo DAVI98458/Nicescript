@@ -56,7 +56,7 @@ local function RunAutoGuardScript()
     -- CONFIG
     --==================================================
     local DETECTION_RADIUS = 17
-    local CLOSE_DELAY = 1.5
+    local CLOSE_DELAY = 0.5
     local CAM_SWITCH_INTERVAL = 2.5
     local AutoGuardEnabled = false
     local HighlightEnabled = false

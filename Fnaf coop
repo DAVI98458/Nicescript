@@ -1,294 +1,235 @@
 --==================================================
--- LOAD RAYFIELD
+-- SERVICES
+--==================================================
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+
+--==================================================
+-- RAYFIELD
 --==================================================
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
+local Window = Rayfield:CreateWindow({
+    Name = "FNAF 1 co-op",
+    LoadingTitle = "FNAF 1 co-op",
+    LoadingSubtitle = "Auto Guard System",
+    ConfigurationSaving = { Enabled = false }
+})
+
+local MainTab = Window:CreateTab("Main", 4483362458)
+
 --==================================================
--- FUNÇÃO PRINCIPAL
+-- CONFIG
 --==================================================
-local function RunAutoGuardScript()
-    local Players = game:GetService("Players")
-    local player = Players.LocalPlayer
-    local RunService = game:GetService("RunService")
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
-    local switchCamsEvent
+local DETECTION_RADIUS = 17
+local CLOSE_DELAY = 1
+local REMOTE_INTERVAL = 1
 
-    local Animatronics, rightDoorPrompt, leftDoorPrompt, chairPrompt
+--==================================================
+-- ANIMATRONICS
+--==================================================
+local Animatronics = {
+    Foxy   = workspace.Animatronics.Foxy.FoxyNPC,
+    Bonnie = workspace.Animatronics.Bonnie.BonnieNPC,
+    Chica  = workspace.Animatronics.Chica.ChicaNPC,
+    Freddy = workspace.Animatronics.Freddy.FreddyNPC
+}
 
-    --== LOOP ATÉ ENCONTRAR TODOS OS PATHS
-    repeat
-        Animatronics = {
-            Foxy   = workspace.Animatronics:FindFirstChild("Foxy") and workspace.Animatronics.Foxy:FindFirstChild("FoxyNPC"),
-            Freddy = workspace.Animatronics:FindFirstChild("Freddy") and workspace.Animatronics.Freddy:FindFirstChild("FreddyNPC"),
-            Chica  = workspace.Animatronics:FindFirstChild("Chica") and workspace.Animatronics.Chica:FindFirstChild("ChicaNPC"),
-            Bonnie = workspace.Animatronics:FindFirstChild("Bonnie") and workspace.Animatronics.Bonnie:FindFirstChild("BonnieNPC")
-        }
+--==================================================
+-- TARGET POSITIONS (EXATAS)
+--==================================================
+local TargetPositions = {
+    Bonnie = Vector3.new(15, 4, -71),
+    Chica  = Vector3.new(-2, 4, -71),
+    Freddy = Vector3.new(-4, 4, -87)
+}
 
-        rightDoorPrompt = workspace.GameTriggers:FindFirstChild("OfficeButtons") 
-                        and workspace.GameTriggers.OfficeButtons:FindFirstChild("RightDoorButton")
-                        and workspace.GameTriggers.OfficeButtons.RightDoorButton.Part:FindFirstChild("ProximityPrompt")
+--==================================================
+-- PROXIMITY PROMPTS
+--==================================================
+local LeftDoorPrompt  = workspace.GameTriggers.OfficeButtons.LeftDoorButton.Part.ProximityPrompt
+local RightDoorPrompt = workspace.GameTriggers.OfficeButtons.RightDoorButton.Part.ProximityPrompt
+local ChairPrompt     = workspace.GameTriggers.OfficeChair.ProxPart.ProximityPrompt
 
-        leftDoorPrompt = workspace.GameTriggers:FindFirstChild("OfficeButtons") 
-                        and workspace.GameTriggers.OfficeButtons:FindFirstChild("LeftDoorButton")
-                        and workspace.GameTriggers.OfficeButtons.LeftDoorButton.Part:FindFirstChild("ProximityPrompt")
+--==================================================
+-- REMOTE (ANTI-FOXY)
+--==================================================
+local CamRemote = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("playerSwitchCamsEvent")
 
-        chairPrompt = workspace.GameTriggers:FindFirstChild("OfficeChair") 
-                        and workspace.GameTriggers.OfficeChair:FindFirstChild("ProxPart")
-                        and workspace.GameTriggers.OfficeChair.ProxPart:FindFirstChild("ProximityPrompt")
+--==================================================
+-- STATE
+--==================================================
+local AutoGuardEnabled = false
+local AntiFoxyEnabled = false
+local HighlightEnabled = false
+local RemotePaused = false
+local ChairFired = false
 
-        switchCamsEvent = ReplicatedStorage:FindFirstChild("RemoteEvents") 
-                        and ReplicatedStorage.RemoteEvents:FindFirstChild("playerSwitchCamsEvent")
+local DoorState = {
+    Left = { Closed = false, Timer = 0 },
+    Right = { Closed = false, Timer = 0 }
+}
 
-        local allFound = true
-        for _, anim in pairs(Animatronics) do
-            if not anim then allFound = false break end
+--==================================================
+-- HIGHLIGHTS
+--==================================================
+local Highlights = {}
+
+local function setHighlights(state)
+    for name, anim in pairs(Animatronics) do
+        if anim then
+            if state and not Highlights[name] then
+                local h = Instance.new("Highlight")
+                h.FillTransparency = 0.6
+                h.OutlineTransparency = 0
+                h.Parent = anim
+                Highlights[name] = h
+            elseif not state and Highlights[name] then
+                Highlights[name]:Destroy()
+                Highlights[name] = nil
+            end
         end
-        if not rightDoorPrompt or not leftDoorPrompt or not chairPrompt or not switchCamsEvent then
-            allFound = false
-        end
-
-        if not allFound then wait(0.5) end
-    until Animatronics.Foxy and Animatronics.Freddy and Animatronics.Chica and Animatronics.Bonnie and rightDoorPrompt and leftDoorPrompt and chairPrompt and switchCamsEvent
-
-    --==================================================
-    -- CONFIG
-    --==================================================
-    local DETECTION_RADIUS = 17.5
-    local CLOSE_DELAY = 4.5
-    local CAM_SWITCH_INTERVAL = 1
-    local AUTO_RESTART_DELAY = 1.5 -- delay antes do remote voltar
-    local AutoGuardEnabled = false
-    local HighlightEnabled = false
-    local AntiFoxyEnabled = false
-    local ChairPromptFired = false
-
-    local Prompts = {rightDoorPrompt, leftDoorPrompt}
-    local PromptState = {}
-    for _, prompt in ipairs(Prompts) do
-        PromptState[prompt] = {Count = 0, Active = false, Timer = 0, FoxyDetected = false}
     end
-
-    --==================================================
-    -- GUI
-    --==================================================
-    local Window = Rayfield:CreateWindow({
-        Name = "FNAF 1 Co-op",
-        LoadingTitle = "FNAF 1 Co-op",
-        LoadingSubtitle = "By: shadown_gd",
-        ConfigurationSaving = { Enabled = false }
-    })
-
-    local MainTab = Window:CreateTab("Main")
-
-    -- Auto Guard
-    MainTab:CreateToggle({
-        Name = "Auto Guard",
-        CurrentValue = false,
-        Flag = "AutoGuardToggle",
-        Callback = function(value)
-            AutoGuardEnabled = value
-            if AutoGuardEnabled and not ChairPromptFired then
-                ChairPromptFired = true
-                spawn(function()
-                    local fired = false
-                    while not fired and AutoGuardEnabled do
-                        fired = pcall(function()
-                            fireproximityprompt(chairPrompt)
-                        end)
-                        wait(0.1)
-                    end
-                end)
-            end
-        end
-    })
-
-    -- Highlight Animatronics
-    MainTab:CreateToggle({
-        Name = "Highlight Animatronics",
-        CurrentValue = false,
-        Flag = "HighlightToggle",
-        Callback = function(value)
-            HighlightEnabled = value
-            if value then
-                for _, anim in pairs(Animatronics) do
-                    if anim and not anim:FindFirstChildOfClass("Highlight") then
-                        local h = Instance.new("Highlight")
-                        h.FillColor = Color3.fromRGB(255,0,0)
-                        h.OutlineColor = Color3.fromRGB(255,255,255)
-                        h.Parent = anim
-                    end
-                end
-            else
-                for _, anim in pairs(Animatronics) do
-                    for _, h in ipairs(anim:GetChildren()) do
-                        if h:IsA("Highlight") then
-                            h:Destroy()
-                        end
-                    end
-                end
-            end
-        end
-    })
-
-    -- Anti-Foxy toggle
-    MainTab:CreateToggle({
-        Name = "Anti-Foxy",
-        CurrentValue = false,
-        Flag = "AntiFoxyToggle",
-        Callback = function(value)
-            AntiFoxyEnabled = value
-        end
-    })
-
-    --==================================================
-    -- FUNÇÃO CENTRAL DO MODELO
-    --==================================================
-    local function getModelCenter(model)
-        local total = Vector3.zero
-        local count = 0
-        for _, obj in ipairs(model:GetDescendants()) do
-            if obj:IsA("BasePart") then
-                total += obj.Position
-                count += 1
-            end
-        end
-        if count == 0 then return nil end
-        return total / count
-    end
-
-    --==================================================
-    -- LOOP PRINCIPAL DE DETECÇÃO E PORTAS
-    --==================================================
-    RunService.Heartbeat:Connect(function(dt)
-        if AutoGuardEnabled then
-            -- reset counts e flags
-            for _, state in pairs(PromptState) do
-                state.Count = 0
-                state.FoxyDetected = false
-            end
-
-            -- detectar animatronics
-            for name, anim in pairs(Animatronics) do
-                if anim and anim:IsDescendantOf(workspace) then
-                    local success, pos = pcall(getModelCenter, anim)
-                    if success and pos then
-                        local closestPrompt = nil
-                        local closestDist = DETECTION_RADIUS
-                        for _, prompt in ipairs(Prompts) do
-                            local dist = (pos - prompt.Parent.Position).Magnitude
-                            if dist <= closestDist then
-                                closestDist = dist
-                                closestPrompt = prompt
-                            end
-                        end
-                        if closestPrompt then
-                            local state = PromptState[closestPrompt]
-                            state.Count += 1
-                            if name == "Foxy" then
-                                state.FoxyDetected = true
-                            end
-                        end
-                    end
-                end
-            end
-
-            -- lógica de portas com retry
-            for promptObj, state in pairs(PromptState) do
-                local function tryFire()
-                    spawn(function()
-                        local fired = false
-                        while not fired and AutoGuardEnabled do
-                            fired = pcall(function()
-                                fireproximityprompt(promptObj)
-                            end)
-                            wait(0.05)
-                        end
-                    end)
-                end
-
-                if state.Count > 0 then
-                    if state.FoxyDetected and not state.Active then
-                        state.Active = true
-                        state.Timer = 0
-                        tryFire()
-                    elseif not state.FoxyDetected then
-                        state.Timer += dt
-                        if state.Timer >= CLOSE_DELAY and not state.Active then
-                            state.Active = true
-                            tryFire()
-                        end
-                    end
-                else
-                    state.Timer = 0
-                    state.FoxyDetected = false
-                    if state.Active then
-                        state.Active = false
-                        -- abre porta quando animatronic saiu
-                        tryFire()
-                    end
-                end
-            end
-        end
-    end)
-
-    --==================================================
-    -- LOOP DE SWITCH DE CÂMERAS (Anti-Foxy)
-    --==================================================
-    spawn(function()
-        local camToggle = true
-        local remotePaused = false
-        while true do
-            if AutoGuardEnabled and AntiFoxyEnabled then
-                -- verifica se algum animatronic está dentro do raio
-                local animNear = false
-                for _, anim in pairs(Animatronics) do
-                    if anim and anim:IsDescendantOf(workspace) then
-                        local success, pos = pcall(getModelCenter, anim)
-                        if success and pos then
-                            for _, prompt in ipairs(Prompts) do
-                                if (pos - prompt.Parent.Position).Magnitude <= DETECTION_RADIUS then
-                                    animNear = true
-                                    break
-                                end
-                            end
-                        end
-                        if animNear then break end
-                    end
-                end
-
-                if animNear then
-                    -- pausa o loop e dispara apenas último remote
-                    if not remotePaused then
-                        pcall(function() switchCamsEvent:FireServer("") end)
-                        remotePaused = true
-                    end
-                    wait(0.1)
-                else
-                    if remotePaused then
-                        -- espera 1 segundo antes de voltar o loop
-                        wait(AUTO_RESTART_DELAY)
-                        remotePaused = false
-                        camToggle = true -- reset toggle
-                    end
-                    -- loop normal
-                    pcall(function()
-                        if camToggle then
-                            switchCamsEvent:FireServer("CAM1A")
-                        else
-                            switchCamsEvent:FireServer("")
-                        end
-                        camToggle = not camToggle
-                    end)
-                    wait(CAM_SWITCH_INTERVAL)
-                end
-            else
-                wait(0.1)
-            end
-        end
-    end)
 end
 
 --==================================================
--- EXECUTA SCRIPT
+-- UTILS (SEM PrimaryPart)
 --==================================================
-RunAutoGuardScript()
+local function getClosestDistance(model, position)
+    local closest = math.huge
+    for _, v in ipairs(model:GetDescendants()) do
+        if v:IsA("BasePart") then
+            local d = (v.Position - position).Magnitude
+            if d < closest then
+                closest = d
+            end
+        end
+    end
+    return closest
+end
+
+local function isAtExactPosition(model, target)
+    return getClosestDistance(model, target) <= 2
+end
+
+--==================================================
+-- ANTI-FOXY LOOP
+--==================================================
+task.spawn(function()
+    while true do
+        if AntiFoxyEnabled and not RemotePaused then
+            CamRemote:FireServer("CAM1A")
+            task.wait(0.1)
+            CamRemote:FireServer("")
+        end
+        task.wait(REMOTE_INTERVAL)
+    end
+end)
+
+--==================================================
+-- TOGGLES
+--==================================================
+MainTab:CreateToggle({
+    Name = "Auto Guard",
+    CurrentValue = false,
+    Callback = function(v)
+        AutoGuardEnabled = v
+
+        if v and not ChairFired then
+            ChairFired = true
+            fireproximityprompt(ChairPrompt)
+        end
+    end
+})
+
+MainTab:CreateToggle({
+    Name = "Anti-Foxy",
+    CurrentValue = false,
+    Callback = function(v)
+        AntiFoxyEnabled = v
+    end
+})
+
+MainTab:CreateToggle({
+    Name = "Highlight Animatronics",
+    CurrentValue = false,
+    Callback = function(v)
+        HighlightEnabled = v
+        setHighlights(v)
+    end
+})
+
+--==================================================
+-- CORE LOOP
+--==================================================
+RunService.Heartbeat:Connect(function(dt)
+    if not AutoGuardEnabled then return end
+
+    local leftDetected = false
+    local rightDetected = false
+
+    -- FOXY (ESQUERDA - INSTANTÂNEO)
+    if getClosestDistance(Animatronics.Foxy, LeftDoorPrompt.Parent.Position) <= DETECTION_RADIUS then
+        leftDetected = true
+        RemotePaused = true
+        if not DoorState.Left.Closed then
+            fireproximityprompt(LeftDoorPrompt)
+            DoorState.Left.Closed = true
+        end
+    end
+
+    -- BONNIE (ESQUERDA)
+    if isAtExactPosition(Animatronics.Bonnie, TargetPositions.Bonnie) then
+        leftDetected = true
+        RemotePaused = true
+        DoorState.Left.Timer += dt
+        if DoorState.Left.Timer >= CLOSE_DELAY and not DoorState.Left.Closed then
+            fireproximityprompt(LeftDoorPrompt)
+            DoorState.Left.Closed = true
+        end
+    end
+
+    -- CHICA (DIREITA)
+    if isAtExactPosition(Animatronics.Chica, TargetPositions.Chica) then
+        rightDetected = true
+        RemotePaused = true
+        DoorState.Right.Timer += dt
+        if DoorState.Right.Timer >= CLOSE_DELAY and not DoorState.Right.Closed then
+            fireproximityprompt(RightDoorPrompt)
+            DoorState.Right.Closed = true
+        end
+    end
+
+    -- FREDDY (DIREITA)
+    if isAtExactPosition(Animatronics.Freddy, TargetPositions.Freddy) then
+        rightDetected = true
+        RemotePaused = true
+        DoorState.Right.Timer += dt
+        if DoorState.Right.Timer >= CLOSE_DELAY and not DoorState.Right.Closed then
+            fireproximityprompt(RightDoorPrompt)
+            DoorState.Right.Closed = true
+        end
+    end
+
+    -- ABRIR PORTAS + RETOMAR REMOTE
+    if not leftDetected and DoorState.Left.Closed then
+        DoorState.Left.Closed = false
+        DoorState.Left.Timer = 0
+        fireproximityprompt(LeftDoorPrompt)
+        task.delay(1, function()
+            RemotePaused = false
+        end)
+    end
+
+    if not rightDetected and DoorState.Right.Closed then
+        DoorState.Right.Closed = false
+        DoorState.Right.Timer = 0
+        fireproximityprompt(RightDoorPrompt)
+        task.delay(1, function()
+            RemotePaused = false
+        end)
+    end
+end)

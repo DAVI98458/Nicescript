@@ -24,8 +24,8 @@ local MainTab = Window:CreateTab("Main", 4483362458)
 --==================================================
 -- CONFIG
 --==================================================
-local DETECTION_RADIUS = 17
-local CLOSE_DELAY = 1
+local DETECTION_RADIUS = 15
+local CLOSE_DELAY = 2
 local REMOTE_INTERVAL = 1
 
 --==================================================

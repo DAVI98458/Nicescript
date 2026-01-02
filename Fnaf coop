@@ -53,10 +53,10 @@ local function RunAutoGuardScript()
     --==================================================
     -- CONFIG
     --==================================================
-    local DETECTION_RADIUS = 17
-    local CLOSE_DELAY = 3.6
+    local DETECTION_RADIUS = 17.5
+    local CLOSE_DELAY = 4
     local CAM_SWITCH_INTERVAL = 1
-    local AUTO_RESTART_DELAY = 1 -- delay antes do remote voltar
+    local AUTO_RESTART_DELAY = 1.5 -- delay antes do remote voltar
     local AutoGuardEnabled = false
     local HighlightEnabled = false
     local AntiFoxyEnabled = false

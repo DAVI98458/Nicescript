@@ -47,9 +47,7 @@ local function RunAutoGuardScript()
             allFound = false
         end
 
-        if not allFound then
-            wait(0.5)
-        end
+        if not allFound then wait(0.5) end
     until Animatronics.Foxy and Animatronics.Freddy and Animatronics.Chica and Animatronics.Bonnie and rightDoorPrompt and leftDoorPrompt and chairPrompt and switchCamsEvent
 
     --==================================================
@@ -143,14 +141,18 @@ local function RunAutoGuardScript()
         local camToggle = true
         while true do
             if AutoGuardEnabled then
+                -- delay pequeno antes de disparar para estabilizar workspace
+                wait(0.05)
                 if camToggle then
-                    switchCamsEvent:FireServer("CAM1A")
+                    pcall(function() switchCamsEvent:FireServer("CAM1A") end)
                 else
-                    switchCamsEvent:FireServer("")
+                    pcall(function() switchCamsEvent:FireServer("") end)
                 end
                 camToggle = not camToggle
+                wait(CAM_SWITCH_INTERVAL)
+            else
+                wait(0.1)
             end
-            wait(CAM_SWITCH_INTERVAL)
         end
     end)
 
@@ -169,8 +171,8 @@ local function RunAutoGuardScript()
         -- detectar animatronics
         for name, anim in pairs(Animatronics) do
             if anim and anim:IsDescendantOf(workspace) then
-                local pos = getModelCenter(anim)
-                if pos then
+                local success, pos = pcall(getModelCenter, anim)
+                if success and pos then
                     local closestPrompt = nil
                     local closestDist = DETECTION_RADIUS
                     for _, prompt in ipairs(Prompts) do

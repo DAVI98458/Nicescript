@@ -56,7 +56,7 @@ local function RunAutoGuardScript()
     -- CONFIG
     --==================================================
     local DETECTION_RADIUS = 17
-    local CLOSE_DELAY = 0.5
+    local CLOSE_DELAY = 1.5
     local CAM_SWITCH_INTERVAL = 2.5
     local AutoGuardEnabled = false
     local HighlightEnabled = false
@@ -81,7 +81,7 @@ local function RunAutoGuardScript()
     local MainTab = Window:CreateTab("Main")
 
     MainTab:CreateToggle({
-        Name = "Auto Guard (anti-foxy Legit)",
+        Name = "Auto Guard",
         CurrentValue = false,
         Flag = "AutoGuardToggle",
         Callback = function(value)
@@ -137,17 +137,12 @@ local function RunAutoGuardScript()
     end
 
     --==================================================
-    -- LOOP PRINCIPAL
+    -- LOOP DE SWITCH DE CÂMERAS (COROUTINE)
     --==================================================
-    local camTimer = 0
-    local camToggle = true
-
-    RunService.Heartbeat:Connect(function(dt)
-        if AutoGuardEnabled then
-            --== SWITCH DE CAMERAS
-            camTimer += dt
-            if camTimer >= CAM_SWITCH_INTERVAL then
-                camTimer = 0
+    spawn(function()
+        local camToggle = true
+        while true do
+            if AutoGuardEnabled then
                 if camToggle then
                     switchCamsEvent:FireServer("CAM1A")
                 else
@@ -155,58 +150,67 @@ local function RunAutoGuardScript()
                 end
                 camToggle = not camToggle
             end
+            wait(CAM_SWITCH_INTERVAL)
+        end
+    end)
 
-            --== DETECÇÃO DE ANIMATRONICS
-            for _, state in pairs(PromptState) do
-                state.Count = 0
-                state.FoxyDetected = false
-            end
+    --==================================================
+    -- LOOP PRINCIPAL DE DETECÇÃO E PORTAS
+    --==================================================
+    RunService.Heartbeat:Connect(function(dt)
+        if not AutoGuardEnabled then return end
 
-            for name, anim in pairs(Animatronics) do
-                if anim and anim:IsDescendantOf(workspace) then
-                    local pos = getModelCenter(anim)
-                    if pos then
-                        local closestPrompt = nil
-                        local closestDist = DETECTION_RADIUS
-                        for _, prompt in ipairs(Prompts) do
-                            local dist = (pos - prompt.Parent.Position).Magnitude
-                            if dist <= closestDist then
-                                closestDist = dist
-                                closestPrompt = prompt
-                            end
+        -- reset counts e flags
+        for _, state in pairs(PromptState) do
+            state.Count = 0
+            state.FoxyDetected = false
+        end
+
+        -- detectar animatronics
+        for name, anim in pairs(Animatronics) do
+            if anim and anim:IsDescendantOf(workspace) then
+                local pos = getModelCenter(anim)
+                if pos then
+                    local closestPrompt = nil
+                    local closestDist = DETECTION_RADIUS
+                    for _, prompt in ipairs(Prompts) do
+                        local dist = (pos - prompt.Parent.Position).Magnitude
+                        if dist <= closestDist then
+                            closestDist = dist
+                            closestPrompt = prompt
                         end
-                        if closestPrompt then
-                            local state = PromptState[closestPrompt]
-                            state.Count += 1
-                            if name == "Foxy" then
-                                state.FoxyDetected = true
-                            end
+                    end
+                    if closestPrompt then
+                        local state = PromptState[closestPrompt]
+                        state.Count += 1
+                        if name == "Foxy" then
+                            state.FoxyDetected = true
                         end
                     end
                 end
             end
+        end
 
-            --== LOGICA DE PORTAS
-            for promptObj, state in pairs(PromptState) do
-                if state.Count > 0 then
-                    if state.FoxyDetected and not state.Active then
-                        state.Active = true
-                        state.Timer = 0
-                        fireproximityprompt(promptObj)
-                    elseif not state.FoxyDetected then
-                        state.Timer += dt
-                        if state.Timer >= CLOSE_DELAY and not state.Active then
-                            state.Active = true
-                            fireproximityprompt(promptObj)
-                        end
-                    end
-                else
+        -- lógica de portas
+        for promptObj, state in pairs(PromptState) do
+            if state.Count > 0 then
+                if state.FoxyDetected and not state.Active then
+                    state.Active = true
                     state.Timer = 0
-                    state.FoxyDetected = false
-                    if state.Active then
-                        state.Active = false
+                    fireproximityprompt(promptObj)
+                elseif not state.FoxyDetected then
+                    state.Timer += dt
+                    if state.Timer >= CLOSE_DELAY and not state.Active then
+                        state.Active = true
                         fireproximityprompt(promptObj)
                     end
+                end
+            else
+                state.Timer = 0
+                state.FoxyDetected = false
+                if state.Active then
+                    state.Active = false
+                    fireproximityprompt(promptObj)
                 end
             end
         end

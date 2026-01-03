@@ -150,7 +150,7 @@ MainTab:CreateToggle({
 })
 
 MainTab:CreateToggle({
-    Name = "Anti-Foxy",
+    Name = "Anti-Foxy Beta (67% functional)",
     CurrentValue = false,
     Callback = function(v)
         AntiFoxyEnabled = v

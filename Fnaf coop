@@ -169,7 +169,7 @@ end)
 -- TOGGLES
 --==================================================
 MainTab:CreateToggle({
-    Name = "Auto Guard (Best Function",
+    Name = "Auto Guard (Best Function)",
     CurrentValue = false,
     Callback = function(v)
         AutoGuardEnabled = v

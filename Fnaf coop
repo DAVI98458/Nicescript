@@ -14,7 +14,7 @@ local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
 local Window = Rayfield:CreateWindow({
     Name = "FNAF 1 co-op Semi Beta",
-    LoadingTitle = "FNAF 1 co-op ",
+    LoadingTitle = "FNAF 1 co-op Beta",
     LoadingSubtitle = "by: shadown_gd",
     ConfigurationSaving = { Enabled = false }
 })
@@ -24,9 +24,10 @@ local MainTab = Window:CreateTab("Main", 4483362458)
 --==================================================
 -- CONFIG
 --==================================================
-local FOXY_RADIUS   = 16
-local FREDDY_RADIUS = 12
-local CLOSE_DELAY   = 0.1
+local FOXY_RADIUS     = 16
+local FREDDY_RADIUS   = 12
+local FIXED_RADIUS    = 2
+local FIXED_HOLD_TIME = 0.25
 local REMOTE_INTERVAL = 1
 
 --==================================================
@@ -64,20 +65,19 @@ local CamRemote = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("p
 -- STATE
 --==================================================
 local AutoGuardEnabled = false
-local AntiFoxyEnabled = false
+local AntiFoxyEnabled  = false
 local HighlightEnabled = false
-local RemotePaused = false
-local ChairFired = false
+local RemotePaused     = false
+local ChairFired       = false
 
 local DoorState = {
-    Left = {
-        Closed = false,
-        Timer = 0
-    },
-    Right = {
-        Closed = false,
-        Timer = 0
-    }
+    Left  = { Closed = false },
+    Right = { Closed = false }
+}
+
+local HoldTimers = {
+    Bonnie = 0,
+    Chica  = 0
 }
 
 --==================================================
@@ -118,10 +118,6 @@ local function getClosestDistance(model, position)
     return closest
 end
 
-local function isAtExactPosition(model, target)
-    return getClosestDistance(model, target) <= 2
-end
-
 --==================================================
 -- ANTI-FOXY LOOP
 --==================================================
@@ -152,7 +148,7 @@ MainTab:CreateToggle({
 })
 
 MainTab:CreateToggle({
-    Name = "Anti-Foxy Beta (67% functional)",
+    Name = "Anti-Foxy Beta",
     CurrentValue = false,
     Callback = function(v)
         AntiFoxyEnabled = v
@@ -177,34 +173,48 @@ RunService.Heartbeat:Connect(function(dt)
     local leftThreat  = false
     local rightThreat = false
 
-    -- FOXY (ESQUERDA – RAIO NA PORTA)
+    --======================
+    -- FOXY (ESQUERDA)
+    --======================
     if getClosestDistance(Animatronics.Foxy, LeftDoorPrompt.Parent.Position) <= FOXY_RADIUS then
         leftThreat = true
     end
 
-    -- BONNIE (ESQUERDA – POSIÇÃO EXATA)
-    if isAtExactPosition(Animatronics.Bonnie, TargetPositions.Bonnie) then
-        leftThreat = true
-        DoorState.Left.Timer += dt
+    --======================
+    -- BONNIE (ESQUERDA – PARADO)
+    --======================
+    if getClosestDistance(Animatronics.Bonnie, TargetPositions.Bonnie) <= FIXED_RADIUS then
+        HoldTimers.Bonnie += dt
+        if HoldTimers.Bonnie >= FIXED_HOLD_TIME then
+            leftThreat = true
+        end
     else
-        DoorState.Left.Timer = 0
+        HoldTimers.Bonnie = 0
     end
 
-    -- CHICA (DIREITA – POSIÇÃO EXATA)
-    if isAtExactPosition(Animatronics.Chica, TargetPositions.Chica) then
-        rightThreat = true
-        DoorState.Right.Timer += dt
+    --======================
+    -- CHICA (DIREITA – PARADA)
+    --======================
+    if getClosestDistance(Animatronics.Chica, TargetPositions.Chica) <= FIXED_RADIUS then
+        HoldTimers.Chica += dt
+        if HoldTimers.Chica >= FIXED_HOLD_TIME then
+            rightThreat = true
+        end
     else
-        DoorState.Right.Timer = 0
+        HoldTimers.Chica = 0
     end
 
-    -- FREDDY (DIREITA – RAIO DA POSIÇÃO, IMEDIATO)
+    --======================
+    -- FREDDY (DIREITA – RAIO)
+    --======================
     if getClosestDistance(Animatronics.Freddy, TargetPositions.Freddy) <= FREDDY_RADIUS then
         rightThreat = true
     end
 
+    --======================
     -- FECHAR PORTAS
-    if leftThreat and not DoorState.Left.Closed and DoorState.Left.Timer >= CLOSE_DELAY then
+    --======================
+    if leftThreat and not DoorState.Left.Closed then
         fireproximityprompt(LeftDoorPrompt)
         DoorState.Left.Closed = true
         RemotePaused = true
@@ -216,7 +226,9 @@ RunService.Heartbeat:Connect(function(dt)
         RemotePaused = true
     end
 
+    --======================
     -- ABRIR PORTAS
+    --======================
     if not leftThreat and DoorState.Left.Closed then
         fireproximityprompt(LeftDoorPrompt)
         DoorState.Left.Closed = false

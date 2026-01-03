@@ -24,11 +24,12 @@ local MainTab = Window:CreateTab("Main", 4483362458)
 --==================================================
 -- CONFIG
 --==================================================
-local DOOR_DELAY = 0
-local REMOTE_INTERVAL = 1.5
+local DOOR_DELAY = 0.2
+local REMOTE_INTERVAL = 1
 
 local FOXY_RADIUS = 17
 local FREDDY_RADIUS = 15
+local FREDDY_BUFFER_TIME = 0.15 -- <<< BUFFER DO FREDDY
 
 local BONNIE_TIME = 1
 local CHICA_TIME  = 1
@@ -82,6 +83,7 @@ local Door = {
 
 local BonnieTimer = 0
 local ChicaTimer  = 0
+local FreddyTimer = 0 -- <<< TIMER DO FREDDY
 
 --==================================================
 -- HIGHLIGHT
@@ -210,9 +212,14 @@ RunService.Heartbeat:Connect(function(dt)
         ChicaTimer = 0
     end
 
-    -- FREDDY (RAIO DA POSIÇÃO FIXA)
+    -- FREDDY (RAIO + BUFFER)
     if getClosestDistance(Animatronics.Freddy, TargetPositions.Freddy) <= FREDDY_RADIUS then
-        rightThreat = true
+        FreddyTimer += dt
+        if FreddyTimer >= FREDDY_BUFFER_TIME then
+            rightThreat = true
+        end
+    else
+        FreddyTimer = 0
     end
 
     --========================

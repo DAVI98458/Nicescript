@@ -24,12 +24,12 @@ local MainTab = Window:CreateTab("Main", 4483362458)
 --==================================================
 -- CONFIG
 --==================================================
-local DOOR_DELAY = 0.2
 local REMOTE_INTERVAL = 1
 
 local FOXY_RADIUS = 17
-local FREDDY_RADIUS = 15
-local FREDDY_BUFFER_TIME = 0.15 -- <<< BUFFER DO FREDDY
+
+local FREDDY_CLOSE_RADIUS = 15
+local FREDDY_OPEN_RADIUS  = 16 -- buffer real
 
 local BONNIE_TIME = 1
 local CHICA_TIME  = 1
@@ -45,7 +45,7 @@ local Animatronics = {
 }
 
 --==================================================
--- TARGET POSITIONS (FIXAS)
+-- TARGET POSITIONS
 --==================================================
 local TargetPositions = {
     Bonnie = Vector3.new(15, 4, -71),
@@ -77,38 +77,20 @@ local RemotePaused = false
 local ChairUsed = false
 
 local Door = {
-    Left  = { Closed = false, Transition = false },
-    Right = { Closed = false, Transition = false }
+    Left  = { Closed = false, Busy = false },
+    Right = { Closed = false, Busy = false }
 }
 
 local BonnieTimer = 0
 local ChicaTimer  = 0
-local FreddyTimer = 0 -- <<< TIMER DO FREDDY
+
+local LeftThreatActive  = false
+local RightThreatActive = false
+
+local FreddyThreat = false
 
 --==================================================
--- HIGHLIGHT
---==================================================
-local Highlights = {}
-
-local function setHighlights(state)
-    for name, anim in pairs(Animatronics) do
-        if anim then
-            if state and not Highlights[name] then
-                local h = Instance.new("Highlight")
-                h.FillTransparency = 0.6
-                h.OutlineTransparency = 0
-                h.Parent = anim
-                Highlights[name] = h
-            elseif not state and Highlights[name] then
-                Highlights[name]:Destroy()
-                Highlights[name] = nil
-            end
-        end
-    end
-end
-
---==================================================
--- UTILS (SEM PrimaryPart)
+-- UTILS
 --==================================================
 local function getClosestDistance(model, pos)
     local d = math.huge
@@ -125,7 +107,7 @@ local function isAtPosition(model, pos)
 end
 
 --==================================================
--- CAMERA LOOP (ANTI-FOXY / CAM1C)
+-- CAMERA LOOP (ANTI-FOXY)
 --==================================================
 task.spawn(function()
     while true do
@@ -169,102 +151,89 @@ MainTab:CreateToggle({
     end
 })
 
-MainTab:CreateToggle({
-    Name = "Highlight Animatronics",
-    CurrentValue = false,
-    Callback = function(v)
-        HighlightEnabled = v
-        setHighlights(v)
-    end
-})
-
 --==================================================
 -- CORE LOOP
 --==================================================
 RunService.Heartbeat:Connect(function(dt)
     if not AutoGuardEnabled or not ImprovedAIEnabled then return end
 
-    local leftThreat = false
-    local rightThreat = false
+    LeftThreatActive  = false
+    RightThreatActive = false
 
-    -- FOXY (RAIO DA PORTA)
+    -- FOXY
     if getClosestDistance(Animatronics.Foxy, LeftDoorPrompt.Parent.Position) <= FOXY_RADIUS then
-        leftThreat = true
+        LeftThreatActive = true
     end
 
-    -- BONNIE (POSIÇÃO FIXA + TEMPO)
+    -- BONNIE
     if isAtPosition(Animatronics.Bonnie, TargetPositions.Bonnie) then
         BonnieTimer += dt
         if BonnieTimer >= BONNIE_TIME then
-            leftThreat = true
+            LeftThreatActive = true
         end
     else
         BonnieTimer = 0
     end
 
-    -- CHICA (POSIÇÃO FIXA + TEMPO)
+    -- CHICA
     if isAtPosition(Animatronics.Chica, TargetPositions.Chica) then
         ChicaTimer += dt
         if ChicaTimer >= CHICA_TIME then
-            rightThreat = true
+            RightThreatActive = true
         end
     else
         ChicaTimer = 0
     end
 
-    -- FREDDY (RAIO + BUFFER)
-    if getClosestDistance(Animatronics.Freddy, TargetPositions.Freddy) <= FREDDY_RADIUS then
-        FreddyTimer += dt
-        if FreddyTimer >= FREDDY_BUFFER_TIME then
-            rightThreat = true
-        end
-    else
-        FreddyTimer = 0
+    -- FREDDY (buffer)
+    local d = getClosestDistance(Animatronics.Freddy, TargetPositions.Freddy)
+    if not FreddyThreat and d <= FREDDY_CLOSE_RADIUS then
+        FreddyThreat = true
+    elseif FreddyThreat and d >= FREDDY_OPEN_RADIUS then
+        FreddyThreat = false
     end
 
-    --========================
-    -- FECHAR PORTAS
-    --========================
-    if leftThreat and not Door.Left.Closed and not Door.Left.Transition then
-        Door.Left.Transition = true
+    if FreddyThreat then
+        RightThreatActive = true
+    end
+
+    -- LEFT DOOR
+    if LeftThreatActive and not Door.Left.Closed and not Door.Left.Busy then
+        Door.Left.Busy = true
         RemotePaused = true
-        task.delay(DOOR_DELAY, function()
+        CamRemote:FireServer("")
+        task.delay(0.2, function()
             fireproximityprompt(LeftDoorPrompt)
             Door.Left.Closed = true
-            Door.Left.Transition = false
+            Door.Left.Busy = false
             RemotePaused = false
         end)
-    end
-
-    if rightThreat and not Door.Right.Closed and not Door.Right.Transition then
-        Door.Right.Transition = true
-        RemotePaused = true
-        task.delay(DOOR_DELAY, function()
-            fireproximityprompt(RightDoorPrompt)
-            Door.Right.Closed = true
-            Door.Right.Transition = false
-            RemotePaused = false
-        end)
-    end
-
-    --========================
-    -- ABRIR PORTAS
-    --========================
-    if not leftThreat and Door.Left.Closed and not Door.Left.Transition then
-        Door.Left.Transition = true
+    elseif not LeftThreatActive and Door.Left.Closed and not Door.Left.Busy then
+        Door.Left.Busy = true
         RemotePaused = true
         fireproximityprompt(LeftDoorPrompt)
         Door.Left.Closed = false
-        Door.Left.Transition = false
+        Door.Left.Busy = false
         RemotePaused = false
     end
 
-    if not rightThreat and Door.Right.Closed and not Door.Right.Transition then
-        Door.Right.Transition = true
+    -- RIGHT DOOR
+    if RightThreatActive and not Door.Right.Closed and not Door.Right.Busy then
+        Door.Right.Busy = true
+        RemotePaused = true
+        CamRemote:FireServer("")
+        task.delay(0.5, function()
+            fireproximityprompt(RightDoorPrompt)
+            Door.Right.Closed = true
+            Door.Right.Busy = false
+            RemotePaused = false
+        end)
+    elseif not RightThreatActive and Door.Right.Closed and not Door.Right.Busy then
+        Door.Right.Busy = true
         RemotePaused = true
         fireproximityprompt(RightDoorPrompt)
         Door.Right.Closed = false
-        Door.Right.Transition = false
+        Door.Right.Busy = false
         RemotePaused = false
     end
 end)

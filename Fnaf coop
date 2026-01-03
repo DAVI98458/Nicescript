@@ -24,10 +24,14 @@ local MainTab = Window:CreateTab("Main", 4483362458)
 --==================================================
 -- CONFIG
 --==================================================
-local FOXY_RADIUS     = 16
-local FREDDY_RADIUS   = 12
-local FIXED_RADIUS    = 2
-local FIXED_HOLD_TIME = 1
+local CAMERA_RADIUS = 15
+
+local FOXY_RADIUS = 17
+local FREDDY_RADIUS = 12
+
+local BONNIE_TIME = 1
+local CHICA_TIME  = 1
+
 local REMOTE_INTERVAL = 1
 
 --==================================================
@@ -50,7 +54,7 @@ local TargetPositions = {
 }
 
 --==================================================
--- PROXIMITY PROMPTS
+-- PROMPTS
 --==================================================
 local LeftDoorPrompt  = workspace.GameTriggers.OfficeButtons.LeftDoorButton.Part.ProximityPrompt
 local RightDoorPrompt = workspace.GameTriggers.OfficeButtons.RightDoorButton.Part.ProximityPrompt
@@ -59,29 +63,29 @@ local ChairPrompt     = workspace.GameTriggers.OfficeChair.ProxPart.ProximityPro
 --==================================================
 -- REMOTE
 --==================================================
-local CamRemote = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("playerSwitchCamsEvent")
+local CamRemote = ReplicatedStorage.RemoteEvents.playerSwitchCamsEvent
 
 --==================================================
 -- STATE
 --==================================================
 local AutoGuardEnabled = false
-local AntiFoxyEnabled  = false
+local AntiFoxyEnabled = false
+local ImprovedAIEnabled = false
 local HighlightEnabled = false
-local RemotePaused     = false
-local ChairFired       = false
+
+local RemotePaused = false
+local ChairFired = false
 
 local DoorState = {
-    Left  = { Closed = false },
+    Left = { Closed = false },
     Right = { Closed = false }
 }
 
-local HoldTimers = {
-    Bonnie = 0,
-    Chica  = 0
-}
+local BonnieTimer = 0
+local ChicaTimer  = 0
 
 --==================================================
--- HIGHLIGHT
+-- HIGHLIGHT SYSTEM
 --==================================================
 local Highlights = {}
 
@@ -118,15 +122,44 @@ local function getClosestDistance(model, position)
     return closest
 end
 
+local function isAtExactPosition(model, target)
+    return getClosestDistance(model, target) <= 2
+end
+
+local function anyAnimatronicInCameraRadius()
+    if not ImprovedAIEnabled then return false end
+
+    local leftPos = LeftDoorPrompt.Parent.Position
+    local rightPos = RightDoorPrompt.Parent.Position
+
+    for _, anim in pairs(Animatronics) do
+        if anim then
+            if getClosestDistance(anim, leftPos) <= CAMERA_RADIUS
+            or getClosestDistance(anim, rightPos) <= CAMERA_RADIUS then
+                return true
+            end
+        end
+    end
+    return false
+end
+
 --==================================================
--- ANTI-FOXY LOOP
+-- ANTI-FOXY LOOP (APENAS CAM1C)
 --==================================================
 task.spawn(function()
     while true do
-        if AntiFoxyEnabled and not RemotePaused then
-            CamRemote:FireServer("CAM1C")
-            task.wait(0.1)
-            CamRemote:FireServer("")
+        if AntiFoxyEnabled then
+            if anyAnimatronicInCameraRadius() then
+                if not RemotePaused then
+                    RemotePaused = true
+                    CamRemote:FireServer("")
+                end
+            else
+                RemotePaused = false
+                CamRemote:FireServer("CAM1C")
+                task.wait(0.1)
+                CamRemote:FireServer("")
+            end
         end
         task.wait(REMOTE_INTERVAL)
     end
@@ -136,7 +169,7 @@ end)
 -- TOGGLES
 --==================================================
 MainTab:CreateToggle({
-    Name = "Auto Guard (Best Function)",
+    Name = "Auto Guard (Best Function",
     CurrentValue = false,
     Callback = function(v)
         AutoGuardEnabled = v
@@ -156,6 +189,14 @@ MainTab:CreateToggle({
 })
 
 MainTab:CreateToggle({
+    Name = "Close the door at the right time (Best AI)",
+    CurrentValue = false,
+    Callback = function(v)
+        ImprovedAIEnabled = v
+    end
+})
+
+MainTab:CreateToggle({
     Name = "Highlight Animatronics",
     CurrentValue = false,
     Callback = function(v)
@@ -165,83 +206,64 @@ MainTab:CreateToggle({
 })
 
 --==================================================
--- CORE LOOP
+-- CORE LOOP (PORTAS)
 --==================================================
 RunService.Heartbeat:Connect(function(dt)
     if not AutoGuardEnabled then return end
 
-    local leftThreat  = false
-    local rightThreat = false
+    local leftDetected = false
+    local rightDetected = false
 
-    --======================
     -- FOXY (ESQUERDA)
-    --======================
     if getClosestDistance(Animatronics.Foxy, LeftDoorPrompt.Parent.Position) <= FOXY_RADIUS then
-        leftThreat = true
+        leftDetected = true
+        if not DoorState.Left.Closed then
+            fireproximityprompt(LeftDoorPrompt)
+            DoorState.Left.Closed = true
+        end
     end
 
-    --======================
-    -- BONNIE (ESQUERDA – PARADO)
-    --======================
-    if getClosestDistance(Animatronics.Bonnie, TargetPositions.Bonnie) <= FIXED_RADIUS then
-        HoldTimers.Bonnie += dt
-        if HoldTimers.Bonnie >= FIXED_HOLD_TIME then
-            leftThreat = true
+    -- BONNIE (ESQUERDA – TEMPO)
+    if isAtExactPosition(Animatronics.Bonnie, TargetPositions.Bonnie) then
+        leftDetected = true
+        BonnieTimer += dt
+        if BonnieTimer >= BONNIE_TIME and not DoorState.Left.Closed then
+            fireproximityprompt(LeftDoorPrompt)
+            DoorState.Left.Closed = true
         end
     else
-        HoldTimers.Bonnie = 0
+        BonnieTimer = 0
     end
 
-    --======================
-    -- CHICA (DIREITA – PARADA)
-    --======================
-    if getClosestDistance(Animatronics.Chica, TargetPositions.Chica) <= FIXED_RADIUS then
-        HoldTimers.Chica += dt
-        if HoldTimers.Chica >= FIXED_HOLD_TIME then
-            rightThreat = true
+    -- CHICA (DIREITA – TEMPO)
+    if isAtExactPosition(Animatronics.Chica, TargetPositions.Chica) then
+        rightDetected = true
+        ChicaTimer += dt
+        if ChicaTimer >= CHICA_TIME and not DoorState.Right.Closed then
+            fireproximityprompt(RightDoorPrompt)
+            DoorState.Right.Closed = true
         end
     else
-        HoldTimers.Chica = 0
+        ChicaTimer = 0
     end
 
-    --======================
     -- FREDDY (DIREITA – RAIO)
-    --======================
     if getClosestDistance(Animatronics.Freddy, TargetPositions.Freddy) <= FREDDY_RADIUS then
-        rightThreat = true
+        rightDetected = true
+        if not DoorState.Right.Closed then
+            fireproximityprompt(RightDoorPrompt)
+            DoorState.Right.Closed = true
+        end
     end
 
-    --======================
-    -- FECHAR PORTAS
-    --======================
-    if leftThreat and not DoorState.Left.Closed then
-        fireproximityprompt(LeftDoorPrompt)
-        DoorState.Left.Closed = true
-        RemotePaused = true
-    end
-
-    if rightThreat and not DoorState.Right.Closed then
-        fireproximityprompt(RightDoorPrompt)
-        DoorState.Right.Closed = true
-        RemotePaused = true
-    end
-
-    --======================
     -- ABRIR PORTAS
-    --======================
-    if not leftThreat and DoorState.Left.Closed then
-        fireproximityprompt(LeftDoorPrompt)
+    if not leftDetected and DoorState.Left.Closed then
         DoorState.Left.Closed = false
-        task.delay(1, function()
-            RemotePaused = false
-        end)
+        fireproximityprompt(LeftDoorPrompt)
     end
 
-    if not rightThreat and DoorState.Right.Closed then
-        fireproximityprompt(RightDoorPrompt)
+    if not rightDetected and DoorState.Right.Closed then
         DoorState.Right.Closed = false
-        task.delay(1, function()
-            RemotePaused = false
-        end)
+        fireproximityprompt(RightDoorPrompt)
     end
 end)

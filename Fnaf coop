@@ -283,5 +283,10 @@ end)
 
 MainTab:CreateParagraph({
     Title = "Note",
-    Content = "All these functions need to have low ping to work properly"
+    Content = "All these functions need to have low ping to work properly, except the highlight"
+})
+
+MainTab:CreateParagraph({
+    Title = "Note Important",
+    Content = "Activate auto-guard only in the security room to ensure everything works"
 })

@@ -8,13 +8,13 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 
 --==================================================
--- RAYFIELD.
+-- RAYFIELD
 --==================================================
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
 local Window = Rayfield:CreateWindow({
     Name = "FNAF 1 co-op Semi Beta",
-    LoadingTitle = "FNAF 1 co-op Beta",
+    LoadingTitle = "FNAF 1 co-op",
     LoadingSubtitle = "by: shadown_gd",
     ConfigurationSaving = { Enabled = false }
 })
@@ -27,7 +27,7 @@ local MainTab = Window:CreateTab("Main", 4483362458)
 local FOXY_RADIUS     = 16
 local FREDDY_RADIUS   = 12
 local FIXED_RADIUS    = 2
-local FIXED_HOLD_TIME = 0.25
+local FIXED_HOLD_TIME = 1
 local REMOTE_INTERVAL = 1
 
 --==================================================
@@ -136,7 +136,7 @@ end)
 -- TOGGLES
 --==================================================
 MainTab:CreateToggle({
-    Name = "Auto Guard",
+    Name = "Auto Guard (Best Function)",
     CurrentValue = false,
     Callback = function(v)
         AutoGuardEnabled = v
@@ -148,7 +148,7 @@ MainTab:CreateToggle({
 })
 
 MainTab:CreateToggle({
-    Name = "Anti-Foxy Beta",
+    Name = "Anti-Foxy (Beta)",
     CurrentValue = false,
     Callback = function(v)
         AntiFoxyEnabled = v

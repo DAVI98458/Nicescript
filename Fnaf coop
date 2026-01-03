@@ -24,8 +24,8 @@ local MainTab = Window:CreateTab("Main", 4483362458)
 --==================================================
 -- CONFIG
 --==================================================
-local DETECTION_RADIUS = 15
-local CLOSE_DELAY = 0.2
+local DETECTION_RADIUS = 16
+local CLOSE_DELAY = 0.1
 local REMOTE_INTERVAL = 1
 
 --==================================================
@@ -121,7 +121,7 @@ end
 task.spawn(function()
     while true do
         if AntiFoxyEnabled and not RemotePaused then
-            CamRemote:FireServer("CAM1A")
+            CamRemote:FireServer("CAM1C")
             task.wait(0.1)
             CamRemote:FireServer("")
         end

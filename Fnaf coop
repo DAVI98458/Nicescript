@@ -280,3 +280,8 @@ RunService.Heartbeat:Connect(function(dt)
         RemotePaused = false
     end
 end)
+
+MainTab:CreateParagraph({
+    Title = "Note",
+    Content = "All these functions need to have low ping to work properly"
+})

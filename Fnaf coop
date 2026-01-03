@@ -24,7 +24,7 @@ local MainTab = Window:CreateTab("Main", 4483362458)
 --==================================================
 -- CONFIG
 --==================================================
-local DOOR_DELAY = 0.1
+local DOOR_DELAY = 0
 local REMOTE_INTERVAL = 1.5
 
 local FOXY_RADIUS = 17

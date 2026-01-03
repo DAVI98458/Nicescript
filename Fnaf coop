@@ -24,7 +24,8 @@ local MainTab = Window:CreateTab("Main", 4483362458)
 --==================================================
 -- CONFIG
 --==================================================
-local DETECTION_RADIUS = 16
+local FOXY_RADIUS = 16
+local FREDDY_RADIUS = 12
 local CLOSE_DELAY = 0.1
 local REMOTE_INTERVAL = 1
 
@@ -39,7 +40,7 @@ local Animatronics = {
 }
 
 --==================================================
--- TARGET POSITIONS (EXATAS)
+-- TARGET POSITIONS
 --==================================================
 local TargetPositions = {
     Bonnie = Vector3.new(15, 4, -71),
@@ -55,7 +56,7 @@ local RightDoorPrompt = workspace.GameTriggers.OfficeButtons.RightDoorButton.Par
 local ChairPrompt     = workspace.GameTriggers.OfficeChair.ProxPart.ProximityPrompt
 
 --==================================================
--- REMOTE (ANTI-FOXY)
+-- REMOTE
 --==================================================
 local CamRemote = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("playerSwitchCamsEvent")
 
@@ -74,7 +75,7 @@ local DoorState = {
 }
 
 --==================================================
--- HIGHLIGHTS
+-- HIGHLIGHT
 --==================================================
 local Highlights = {}
 
@@ -100,9 +101,9 @@ end
 --==================================================
 local function getClosestDistance(model, position)
     local closest = math.huge
-    for _, v in ipairs(model:GetDescendants()) do
-        if v:IsA("BasePart") then
-            local d = (v.Position - position).Magnitude
+    for _, p in ipairs(model:GetDescendants()) do
+        if p:IsA("BasePart") then
+            local d = (p.Position - position).Magnitude
             if d < closest then
                 closest = d
             end
@@ -113,6 +114,10 @@ end
 
 local function isAtExactPosition(model, target)
     return getClosestDistance(model, target) <= 2
+end
+
+local function isNearPosition(model, target, radius)
+    return getClosestDistance(model, target) <= radius
 end
 
 --==================================================
@@ -137,7 +142,6 @@ MainTab:CreateToggle({
     CurrentValue = false,
     Callback = function(v)
         AutoGuardEnabled = v
-
         if v and not ChairFired then
             ChairFired = true
             fireproximityprompt(ChairPrompt)
@@ -171,8 +175,8 @@ RunService.Heartbeat:Connect(function(dt)
     local leftDetected = false
     local rightDetected = false
 
-    -- FOXY (ESQUERDA - INSTANTÂNEO)
-    if getClosestDistance(Animatronics.Foxy, LeftDoorPrompt.Parent.Position) <= DETECTION_RADIUS then
+    -- FOXY (ESQUERDA – RAIO NA PORTA)
+    if getClosestDistance(Animatronics.Foxy, LeftDoorPrompt.Parent.Position) <= FOXY_RADIUS then
         leftDetected = true
         RemotePaused = true
         if not DoorState.Left.Closed then
@@ -181,7 +185,7 @@ RunService.Heartbeat:Connect(function(dt)
         end
     end
 
-    -- BONNIE (ESQUERDA)
+    -- BONNIE (ESQUERDA – POSIÇÃO EXATA)
     if isAtExactPosition(Animatronics.Bonnie, TargetPositions.Bonnie) then
         leftDetected = true
         RemotePaused = true
@@ -192,7 +196,7 @@ RunService.Heartbeat:Connect(function(dt)
         end
     end
 
-    -- CHICA (DIREITA)
+    -- CHICA (DIREITA – POSIÇÃO EXATA)
     if isAtExactPosition(Animatronics.Chica, TargetPositions.Chica) then
         rightDetected = true
         RemotePaused = true
@@ -203,18 +207,17 @@ RunService.Heartbeat:Connect(function(dt)
         end
     end
 
-    -- FREDDY (DIREITA)
-    if isAtExactPosition(Animatronics.Freddy, TargetPositions.Freddy) then
+    -- FREDDY (DIREITA – RAIO DA POSIÇÃO)
+    if isNearPosition(Animatronics.Freddy, TargetPositions.Freddy, FREDDY_RADIUS) then
         rightDetected = true
         RemotePaused = true
-        DoorState.Right.Timer += dt
-        if DoorState.Right.Timer >= CLOSE_DELAY and not DoorState.Right.Closed then
+        if not DoorState.Right.Closed then
             fireproximityprompt(RightDoorPrompt)
             DoorState.Right.Closed = true
         end
     end
 
-    -- ABRIR PORTAS + RETOMAR REMOTE
+    -- ABRIR PORTAS
     if not leftDetected and DoorState.Left.Closed then
         DoorState.Left.Closed = false
         DoorState.Left.Timer = 0

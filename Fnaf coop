@@ -4,21 +4,18 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
 local player = Players.LocalPlayer
 
 --==================================================
 -- RAYFIELD
 --==================================================
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
-
 local Window = Rayfield:CreateWindow({
     Name = "FNAF 1 co-op",
     LoadingTitle = "FNAF 1 co-op",
     LoadingSubtitle = "by: shadown_gd",
     ConfigurationSaving = { Enabled = false }
 })
-
 local MainTab = Window:CreateTab("Main", 4483362458)
 
 --==================================================
@@ -27,13 +24,11 @@ local MainTab = Window:CreateTab("Main", 4483362458)
 local REMOTE_INTERVAL = 1
 local DOOR_DELAY = 0.2
 local DOOR_COOLDOWN = 0.10
-
 local FOXY_RADIUS = 17
 local FREDDY_RADIUS = 17
 local FREDDY_BUFFER_TIME = 0.15
-
 local BONNIE_TIME = 1
-local CHICA_TIME  = 1
+local CHICA_TIME = 1
 
 --==================================================
 -- ANIMATRONICS
@@ -76,24 +71,16 @@ local HighlightEnabled = false
 
 local RemotePaused = false
 local ChairUsed = false
-
-local Door = {
-    Left  = { Closed = false, Busy = false },
-    Right = { Closed = false, Busy = false }
-}
+local Door = { Left = { Closed = false, Busy = false }, Right = { Closed = false, Busy = false } }
 
 local LastLeftAction = 0
 local LastRightAction = 0
-
-local BonnieTimer = 0
-local ChicaTimer  = 0
-local FreddyBuffer = 0
+local BonnieTimer, ChicaTimer, FreddyBuffer = 0, 0, 0
 
 --==================================================
 -- HIGHLIGHT (NUNCA REMOVIDO)
 --==================================================
 local Highlights = {}
-
 local function setHighlights(state)
     for name, anim in pairs(Animatronics) do
         if anim then
@@ -129,7 +116,7 @@ local function isAtPosition(model, pos)
 end
 
 --==================================================
--- CAMERA LOOP (ANTI-FOXY CAM1C)
+-- CAMERA LOOP (ANTI-FOXY)
 --==================================================
 task.spawn(function()
     while true do
@@ -143,44 +130,25 @@ task.spawn(function()
 end)
 
 --==================================================
--- TOGGLES (NOMES PRESERVADOS)
+-- TOGGLES
 --==================================================
-MainTab:CreateToggle({
-    Name = "Auto Guard fully functional",
-    CurrentValue = false,
-    Callback = function(v)
-        AutoGuardEnabled = v
-        if v and not ChairUsed then
-            ChairUsed = true
-            fireproximityprompt(ChairPrompt)
-        end
-    end
-})
+MainTab:CreateToggle({ Name = "Auto Guard fully functional", CurrentValue = false, Callback = function(v)
+    AutoGuardEnabled = v
+    if v and not ChairUsed then ChairUsed = true fireproximityprompt(ChairPrompt) end
+end })
 
-MainTab:CreateToggle({
-    Name = "Anti-Foxy (100% functional)",
-    CurrentValue = false,
-    Callback = function(v)
-        AntiFoxyEnabled = v
-    end
-})
+MainTab:CreateToggle({ Name = "Anti-Foxy (100% functional)", CurrentValue = false, Callback = function(v)
+    AntiFoxyEnabled = v
+end })
 
-MainTab:CreateToggle({
-    Name = "Close the door at the right time (It works much better with anti-foxy)",
-    CurrentValue = false,
-    Callback = function(v)
-        ImprovedAIEnabled = v
-    end
-})
+MainTab:CreateToggle({ Name = "Close the door at the right time (It works much better with anti-foxy)", CurrentValue = false, Callback = function(v)
+    ImprovedAIEnabled = v
+end })
 
-MainTab:CreateToggle({
-    Name = "Highlight Animatronics",
-    CurrentValue = false,
-    Callback = function(v)
-        HighlightEnabled = v
-        setHighlights(v)
-    end
-})
+MainTab:CreateToggle({ Name = "Highlight Animatronics", CurrentValue = false, Callback = function(v)
+    HighlightEnabled = v
+    setHighlights(v)
+end })
 
 --==================================================
 -- CORE LOOP
@@ -188,47 +156,34 @@ MainTab:CreateToggle({
 RunService.Heartbeat:Connect(function(dt)
     if not AutoGuardEnabled or not ImprovedAIEnabled then return end
 
-    local leftThreat = false
-    local rightThreat = false
+    local leftThreat, rightThreat = false, false
 
-    -- FOXY
+    -- FOXY (RAIO)
     if getClosestDistance(Animatronics.Foxy, LeftDoorPrompt.Parent.Position) <= FOXY_RADIUS then
         leftThreat = true
     end
 
-    -- BONNIE
+    -- BONNIE (POSIÇÃO FIXA + TEMPO)
     if isAtPosition(Animatronics.Bonnie, TargetPositions.Bonnie) then
         BonnieTimer += dt
-        if BonnieTimer >= BONNIE_TIME then
-            leftThreat = true
-        end
-    else
-        BonnieTimer = 0
-    end
+        if BonnieTimer >= BONNIE_TIME then leftThreat = true end
+    else BonnieTimer = 0 end
 
-    -- CHICA
+    -- CHICA (POSIÇÃO FIXA + TEMPO)
     if isAtPosition(Animatronics.Chica, TargetPositions.Chica) then
         ChicaTimer += dt
-        if ChicaTimer >= CHICA_TIME then
-            rightThreat = true
-        end
-    else
-        ChicaTimer = 0
-    end
+        if ChicaTimer >= CHICA_TIME then rightThreat = true end
+    else ChicaTimer = 0 end
 
-    -- FREDDY (BUFFER)
+    -- FREDDY (RAIO + BUFFER)
     if getClosestDistance(Animatronics.Freddy, TargetPositions.Freddy) <= FREDDY_RADIUS then
         FreddyBuffer += dt
-        if FreddyBuffer >= FREDDY_BUFFER_TIME then
-            rightThreat = true
-        end
-    else
-        FreddyBuffer = 0
-    end
+        if FreddyBuffer >= FREDDY_BUFFER_TIME then rightThreat = true end
+    else FreddyBuffer = 0 end
 
     local now = os.clock()
 
-    -- FECHAR ESQUERDA
+    -- FECHAR PORTAS
     if leftThreat and not Door.Left.Closed and not Door.Left.Busy and now - LastLeftAction > DOOR_COOLDOWN then
         Door.Left.Busy = true
         RemotePaused = true
@@ -242,7 +197,6 @@ RunService.Heartbeat:Connect(function(dt)
         end)
     end
 
-    -- FECHAR DIREITA
     if rightThreat and not Door.Right.Closed and not Door.Right.Busy and now - LastRightAction > DOOR_COOLDOWN then
         Door.Right.Busy = true
         RemotePaused = true
@@ -256,7 +210,7 @@ RunService.Heartbeat:Connect(function(dt)
         end)
     end
 
-    -- ABRIR ESQUERDA
+    -- ABRIR PORTAS
     if not leftThreat and Door.Left.Closed and not Door.Left.Busy and now - LastLeftAction > DOOR_COOLDOWN then
         Door.Left.Busy = true
         RemotePaused = true
@@ -268,7 +222,6 @@ RunService.Heartbeat:Connect(function(dt)
         RemotePaused = false
     end
 
-    -- ABRIR DIREITA
     if not rightThreat and Door.Right.Closed and not Door.Right.Busy and now - LastRightAction > DOOR_COOLDOWN then
         Door.Right.Busy = true
         RemotePaused = true
@@ -281,12 +234,8 @@ RunService.Heartbeat:Connect(function(dt)
     end
 end)
 
-MainTab:CreateParagraph({
-    Title = "Note",
-    Content = "All these functions need to have low ping to work properly, except the highlight"
-})
-
-MainTab:CreateParagraph({
-    Title = "Note Important",
-    Content = "Activate auto-guard only in the security room to ensure everything works"
-})
+--==================================================
+-- NOTAS
+--==================================================
+MainTab:CreateParagraph({ Title = "Note", Content = "All these functions need to have low ping to work properly, except the highlight" })
+MainTab:CreateParagraph({ Title = "Note Important", Content = "Activate auto-guard only in the security room to ensure everything works" })

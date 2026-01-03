@@ -24,11 +24,11 @@ local MainTab = Window:CreateTab("Main", 4483362458)
 --==================================================
 -- CONFIG
 --==================================================
-local DOOR_DELAY = 0.5
+local DOOR_DELAY = 0.2
 local REMOTE_INTERVAL = 1
 
 local FOXY_RADIUS = 17
-local FREDDY_RADIUS = 13
+local FREDDY_RADIUS = 15
 
 local BONNIE_TIME = 1
 local CHICA_TIME  = 1

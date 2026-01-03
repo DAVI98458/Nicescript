@@ -13,8 +13,8 @@ local player = Players.LocalPlayer
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
 local Window = Rayfield:CreateWindow({
-    Name = "FNAF 1 co-op",
-    LoadingTitle = "FNAF 1 co-op Beta",
+    Name = "FNAF 1 co-op Semi Beta",
+    LoadingTitle = "FNAF 1 co-op ",
     LoadingSubtitle = "by: shadown_gd",
     ConfigurationSaving = { Enabled = false }
 })
@@ -24,9 +24,9 @@ local MainTab = Window:CreateTab("Main", 4483362458)
 --==================================================
 -- CONFIG
 --==================================================
-local FOXY_RADIUS = 16
+local FOXY_RADIUS   = 16
 local FREDDY_RADIUS = 12
-local CLOSE_DELAY = 0.1
+local CLOSE_DELAY   = 0.1
 local REMOTE_INTERVAL = 1
 
 --==================================================
@@ -70,8 +70,14 @@ local RemotePaused = false
 local ChairFired = false
 
 local DoorState = {
-    Left = { Closed = false, Timer = 0 },
-    Right = { Closed = false, Timer = 0 }
+    Left = {
+        Closed = false,
+        Timer = 0
+    },
+    Right = {
+        Closed = false,
+        Timer = 0
+    }
 }
 
 --==================================================
@@ -114,10 +120,6 @@ end
 
 local function isAtExactPosition(model, target)
     return getClosestDistance(model, target) <= 2
-end
-
-local function isNearPosition(model, target, radius)
-    return getClosestDistance(model, target) <= radius
 end
 
 --==================================================
@@ -172,65 +174,60 @@ MainTab:CreateToggle({
 RunService.Heartbeat:Connect(function(dt)
     if not AutoGuardEnabled then return end
 
-    local leftDetected = false
-    local rightDetected = false
+    local leftThreat  = false
+    local rightThreat = false
 
     -- FOXY (ESQUERDA – RAIO NA PORTA)
     if getClosestDistance(Animatronics.Foxy, LeftDoorPrompt.Parent.Position) <= FOXY_RADIUS then
-        leftDetected = true
-        RemotePaused = true
-        if not DoorState.Left.Closed then
-            fireproximityprompt(LeftDoorPrompt)
-            DoorState.Left.Closed = true
-        end
+        leftThreat = true
     end
 
     -- BONNIE (ESQUERDA – POSIÇÃO EXATA)
     if isAtExactPosition(Animatronics.Bonnie, TargetPositions.Bonnie) then
-        leftDetected = true
-        RemotePaused = true
+        leftThreat = true
         DoorState.Left.Timer += dt
-        if DoorState.Left.Timer >= CLOSE_DELAY and not DoorState.Left.Closed then
-            fireproximityprompt(LeftDoorPrompt)
-            DoorState.Left.Closed = true
-        end
+    else
+        DoorState.Left.Timer = 0
     end
 
     -- CHICA (DIREITA – POSIÇÃO EXATA)
     if isAtExactPosition(Animatronics.Chica, TargetPositions.Chica) then
-        rightDetected = true
-        RemotePaused = true
+        rightThreat = true
         DoorState.Right.Timer += dt
-        if DoorState.Right.Timer >= CLOSE_DELAY and not DoorState.Right.Closed then
-            fireproximityprompt(RightDoorPrompt)
-            DoorState.Right.Closed = true
-        end
+    else
+        DoorState.Right.Timer = 0
     end
 
-    -- FREDDY (DIREITA – RAIO DA POSIÇÃO)
-    if isNearPosition(Animatronics.Freddy, TargetPositions.Freddy, FREDDY_RADIUS) then
-        rightDetected = true
+    -- FREDDY (DIREITA – RAIO DA POSIÇÃO, IMEDIATO)
+    if getClosestDistance(Animatronics.Freddy, TargetPositions.Freddy) <= FREDDY_RADIUS then
+        rightThreat = true
+    end
+
+    -- FECHAR PORTAS
+    if leftThreat and not DoorState.Left.Closed and DoorState.Left.Timer >= CLOSE_DELAY then
+        fireproximityprompt(LeftDoorPrompt)
+        DoorState.Left.Closed = true
         RemotePaused = true
-        if not DoorState.Right.Closed then
-            fireproximityprompt(RightDoorPrompt)
-            DoorState.Right.Closed = true
-        end
+    end
+
+    if rightThreat and not DoorState.Right.Closed then
+        fireproximityprompt(RightDoorPrompt)
+        DoorState.Right.Closed = true
+        RemotePaused = true
     end
 
     -- ABRIR PORTAS
-    if not leftDetected and DoorState.Left.Closed then
-        DoorState.Left.Closed = false
-        DoorState.Left.Timer = 0
+    if not leftThreat and DoorState.Left.Closed then
         fireproximityprompt(LeftDoorPrompt)
+        DoorState.Left.Closed = false
         task.delay(1, function()
             RemotePaused = false
         end)
     end
 
-    if not rightDetected and DoorState.Right.Closed then
-        DoorState.Right.Closed = false
-        DoorState.Right.Timer = 0
+    if not rightThreat and DoorState.Right.Closed then
         fireproximityprompt(RightDoorPrompt)
+        DoorState.Right.Closed = false
         task.delay(1, function()
             RemotePaused = false
         end)

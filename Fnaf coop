@@ -30,10 +30,10 @@ local DOOR_COOLDOWN = 0.20
 
 local FOXY_RADIUS = 17
 local FREDDY_RADIUS = 17
-local FREDDY_BUFFER_TIME = 0.15
+local FREDDY_BUFFER_TIME = 0.10
 
-local BONNIE_TIME = 1
-local CHICA_TIME  = 1
+local BONNIE_TIME = 0.5
+local CHICA_TIME  = 0.5
 
 --==================================================
 -- ANIMATRONICS

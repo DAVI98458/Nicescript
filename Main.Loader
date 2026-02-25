@@ -1,7 +1,7 @@
---// PlatoBoost Key System - Delta Executor Edition
---// Otimizado para executores mobile (Delta, Codex, etc) V3
+--// PlatoBoost Key System - OFICIAL (Corrigido para Delta)
+--// Código original do PlatoBoost com adaptações para executores mobile
 
---// Service Configuration.
+--! configuration
 local service = 4314;
 local secret = "851b9074-f28e-427c-8cfe-aefac3e17b59";
 local useNonce = true;
@@ -26,618 +26,279 @@ local Scripts = {
 local CurrentPlaceId = tostring(game.PlaceId)
 local HasScript = Scripts[CurrentPlaceId] ~= nil
 
---// Detectar funções do executor (Delta/Codex/Mobile)
-local fSetClipboard = setclipboard or toclipboard or function(text)
-    -- Para mobile, mostra notificação com o link
+--! wait for game to load
+repeat task.wait(1) until game:IsLoaded();
+
+--! json library (OFICIAL PlatoBoost)
+local a=2^32;local b=a-1;local function c(d,e)local f,g=0,1;while d~=0 or e~=0 do local h,i=d%2,e%2;local j=(h+i)%2;f=f+j*g;d=math.floor(d/2)e=math.floor(e/2)g=g*2 end;return f%a end;local function k(d,e,l,...)local m;if e then d=d%a;e=e%a;m=c(d,e)if l then m=k(m,l,...)end;return m elseif d then return d%a else return 0 end end;local function n(d,e,l,...)local m;if e then d=d%a;e=e%a;m=(d+e-c(d,e))/2;if l then m=n(m,l,...)end;return m elseif d then return d%a else return b end end;local function o(p)return b-p end;local function q(d,r)if r<0 then return lshift(d,-r)end;return math.floor(d%2^32/2^r)end;local function s(p,r)if r>31 or r<-31 then return 0 end;return q(p%a,r)end;local function lshift(d,r)if r<0 then return s(d,-r)end;return d*2^r%2^32 end;local function t(p,r)p=p%a;r=r%32;local u=n(p,2^r-1)return s(p,r)+lshift(u,32-r)end;local v={0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2}local function w(x)return string.gsub(x,".",function(l)return string.format("%02x",string.byte(l))end)end;local function y(z,A)local x=""for B=1,A do local C=z%256;x=string.char(C)..x;z=(z-C)/256 end;return x end;local function D(x,B)local A=0;for B=B,B+3 do A=A*256+string.byte(x,B)end;return A end;local function E(F,G)local H=64-(G+9)%64;G=y(8*G,8)F=F.."\128"..string.rep("\0",H)..G;assert(#F%64==0)return F end;local function I(J)J[1]=0x6a09e667;J[2]=0xbb67ae85;J[3]=0x3c6ef372;J[4]=0xa54ff53a;J[5]=0x510e527f;J[6]=0x9b05688c;J[7]=0x1f83d9ab;J[8]=0x5be0cd19;return J end;local function K(F,B,J)local L={}for M=1,16 do L[M]=D(F,B+(M-1)*4)end;for M=17,64 do local N=L[M-15]local O=k(t(N,7),t(N,18),s(N,3))N=L[M-2]L[M]=(L[M-16]+O+L[M-7]+k(t(N,17),t(N,19),s(N,10)))%a end;local d,e,l,P,Q,R,S,T=J[1],J[2],J[3],J[4],J[5],J[6],J[7],J[8]for B=1,64 do local O=k(t(d,2),t(d,13),t(d,22))local U=k(n(d,e),n(d,l),n(e,l))local V=(O+U)%a;local W=k(t(Q,6),t(Q,11),t(Q,25))local X=k(n(Q,R),n(o(Q),S))local Y=(T+W+X+v[B]+L[B])%a;T=S;S=R;R=Q;Q=(P+Y)%a;P=l;l=e;e=d;d=(Y+V)%a end;J[1]=(J[1]+d)%a;J[2]=(J[2]+e)%a;J[3]=(J[3]+l)%a;J[4]=(J[4]+P)%a;J[5]=(J[5]+Q)%a;J[6]=(J[6]+R)%a;J[7]=(J[7]+S)%a;J[8]=(J[8]+T)%a end;local function Z(F)F=E(F,#F)local J=I({})for B=1,#F,64 do K(F,B,J)end;return w(y(J[1],4)..y(J[2],4)..y(J[3],4)..y(J[4],4)..y(J[5],4)..y(J[6],4)..y(J[7],4)..y(J[8],4))end;local e;local l={["\\"]="\\",["\""]="\"",["\b"]="b",["\f"]="f",["\n"]="n",["\r"]="r",["\t"]="t"}local P={["/"]="/"}for Q,R in pairs(l)do P[R]=Q end;local S=function(T)return"\\"..(l[T]or string.format("u%04x",T:byte()))end;local B=function(M)return"null"end;local v=function(M,z)local _={}z=z or{}if z[M]then error("circular reference")end;z[M]=true;if rawget(M,1)~=nil or next(M)==nil then local A=0;for Q in pairs(M)do if type(Q)~="number"then error("invalid table: mixed or invalid key types")end;A=A+1 end;if A~=#M then error("invalid table: sparse array")end;for a0,R in ipairs(M)do table.insert(_,e(R,z))end;z[M]=nil;return"["..table.concat(_,",").."]"else for Q,R in pairs(M)do if type(Q)~="string"then error("invalid table: mixed or invalid key types")end;table.insert(_,e(Q,z)..":"..e(R,z))end;z[M]=nil;return"{"..table.concat(_,",").."}"end end;local g=function(M)return'"'..M:gsub('[%z\1-\31\\"]',S)..'"'end;local a1=function(M)if M~=M or M<=-math.huge or M>=math.huge then error("unexpected number value '"..tostring(M).."'")end;return string.format("%.14g",M)end;local j={["nil"]=B,["table"]=v,["string"]=g,["number"]=a1,["boolean"]=tostring}e=function(M,z)local x=type(M)local a2=j[x]if a2 then return a2(M,z)end;error("unexpected type '"..x.."'")end;local a3=function(M)return e(M)end;local a4;local N=function(...)local _={}for a0=1,select("#",...)do _[select(a0,...)]=true end;return _ end;local L=N(" ","\t","\r","\n")local p=N(" ","\t","\r","\n","]","}",",")local a5=N("\\","/",'"',"b","f","n","r","t","u")local m=N("true","false","null")local a6={["true"]=true,["false"]=false,["null"]=nil}local a7=function(a8,a9,aa,ab)for a0=a9,#a8 do if aa[a8:sub(a0,a0)]~=ab then return a0 end end;return#a8+1 end;local ac=function(a8,a9,J)local ad=1;local ae=1;for a0=1,a9-1 do ae=ae+1;if a8:sub(a0,a0)=="\n"then ad=ad+1;ae=1 end end;error(string.format("%s at line %d col %d",J,ad,ae))end;local af=function(A)local a2=math.floor;if A<=0x7f then return string.char(A)elseif A<=0x7ff then return string.char(a2(A/64)+192,A%64+128)elseif A<=0xffff then return string.char(a2(A/4096)+224,a2(A%4096/64)+128,A%64+128)elseif A<=0x10ffff then return string.char(a2(A/262144)+240,a2(A%262144/4096)+128,a2(A%4096/64)+128,A%64+128)end;error(string.format("invalid unicode codepoint '%x'",A))end;local ag=function(ah)local ai=tonumber(ah:sub(1,4),16)local aj=tonumber(ah:sub(7,10),16)if aj then return af((ai-0xd800)*0x400+aj-0xdc00+0x10000)else return af(ai)end end;local ak=function(a8,a0)local _=""local al=a0+1;local Q=al;while al<=#a8 do local am=a8:byte(al)if am<32 then ac(a8,al,"control character in string")elseif am==92 then _=_..a8:sub(Q,al-1)al=al+1;local T=a8:sub(al,al)if T=="u"then local an=a8:match("^[dD][89aAbB]%x%x\\u%x%x%x%x",al+1)or a8:match("^%x%x%x%x",al+1)or ac(a8,al-1,"invalid unicode escape in string")_=_..ag(an)al=al+#an else if not a5[T]then ac(a8,al-1,"invalid escape char '"..T.."' in string")end;_=_..P[T]end;Q=al+1 elseif am==34 then _=_..a8:sub(Q,al-1)return _,al+1 end;al=al+1 end;ac(a8,a0,"expected closing quote for string")end;local ao=function(a8,a0)local am=a7(a8,a0,p)local ah=a8:sub(a0,am-1)local A=tonumber(ah)if not A then ac(a8,a0,"invalid number '"..ah.."'")end;return A,am end;local ap=function(a8,a0)local am=a7(a8,a0,p)local aq=a8:sub(a0,am-1)if not m[aq]then ac(a8,a0,"invalid literal '"..aq.."'")end;return a6[aq],am end;local ar=function(a8,a0)local _={}local A=1;a0=a0+1;while 1 do local am;a0=a7(a8,a0,L,true)if a8:sub(a0,a0)=="]"then a0=a0+1;break end;am,a0=a4(a8,a0)_[A]=am;A=A+1;a0=a7(a8,a0,L,true)local as=a8:sub(a0,a0)a0=a0+1;if as=="]"then break end;if as~=","then ac(a8,a0,"expected ']' or ','")end end;return _,a0 end;local at=function(a8,a0)local _={}a0=a0+1;while 1 do local au,M;a0=a7(a8,a0,L,true)if a8:sub(a0,a0)=="}"then a0=a0+1;break end;if a8:sub(a0,a0)~='"'then ac(a8,a0,"expected string for key")end;au,a0=a4(a8,a0)a0=a7(a8,a0,L,true)if a8:sub(a0,a0)~=":"then ac(a8,a0,"expected ':' after key")end;a0=a7(a8,a0+1,L,true)M,a0=a4(a8,a0)_[au]=M;a0=a7(a8,a0,L,true)local as=a8:sub(a0,a0)a0=a0+1;if as=="}"then break end;if as~=","then ac(a8,a0,"expected '}' or ','")end end;return _,a0 end;local av={['"']=ak,["0"]=ao,["1"]=ao,["2"]=ao,["3"]=ao,["4"]=ao,["5"]=ao,["6"]=ao,["7"]=ao,["8"]=ao,["9"]=ao,["-"]=ao,["t"]=ap,["f"]=ap,["n"]=ap,["["]=ar,["{"]=at}a4=function(a8,a9)local as=a8:sub(a9,a9)local a2=av[as]if a2 then return a2(a8,a9)end;ac(a8,a9,"unexpected character '"..as.."'")end;local aw=function(a8)if type(a8)~="string"then error("expected argument of type string, got "..type(a8))end;local _,a9=a4(a8,a7(a8,1,L,true))a9=a7(a8,a9,L,true)if a9<=#a8 then ac(a8,a9,"trailing garbage")end;return _end;
+local lEncode, lDecode, lDigest = a3, aw, Z;
+
+--! platoboost library (OFICIAL - com correções para Delta)
+
+--! callbacks
+local onMessage = function(message) 
+    -- Mostrar no console e na UI
+    print("[PlatoBoost] " .. message)
     game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "LINK PARA COPIAR",
-        Text = "Link no console (F9)!",
-        Duration = 5
+        Title = "PlatoBoost",
+        Text = message:sub(1, 40),
+        Duration = 3
     })
-    print("=" .. string.rep("=", 50))
-    print("COPIE ESTE LINK:")
-    print(text)
-    print("=" .. string.rep("=", 50))
-    return true
+end;
+
+--! functions (OFICIAIS - sem alterações na lógica)
+local requestSending = false;
+local fSetClipboard, fRequest, fStringChar, fToString, fStringSub, fOsTime, fMathRandom, fMathFloor, fGetHwid = setclipboard or toclipboard, request or http_request or syn_request, string.char, tostring, string.sub, os.time, math.random, math.floor, gethwid or function() return game:GetService("Players").LocalPlayer.UserId end
+local cachedLink, cachedTime = "", 0;
+
+--! pick host (COM CORREÇÃO PARA DELTA - pcall)
+local host = "https://api.platoboost.com";
+
+-- CORREÇÃO DELTA: Usar pcall para testar conectividade
+local success, hostResponse = pcall(function()
+    return fRequest({
+        Url = host .. "/public/connectivity",
+        Method = "GET"
+    })
+end)
+
+if not success or not hostResponse or (hostResponse.StatusCode ~= 200 and hostResponse.StatusCode ~= 429) then
+    host = "https://api.platoboost.net";
+    print("[PlatoBoost] Usando host alternativo: " .. host)
 end
 
---// Delta usa 'request' normalmente
-local fRequest = request or http_request
+--!optimize 2
+function cacheLink()
+    if cachedTime + (10*60) < fOsTime() then
+        -- CORREÇÃO DELTA: pcall na requisição
+        local success, response = pcall(function()
+            return fRequest({
+                Url = host .. "/public/start",
+                Method = "POST",
+                Body = lEncode({
+                    service = service,
+                    identifier = lDigest(fGetHwid())
+                }),
+                Headers = {
+                    ["Content-Type"] = "application/json"
+                }
+            })
+        end)
 
---// Para Delta mobile, tentar usar game:HttpGet como fallback
-local function httpGetFallback(url)
-    local success, result = pcall(function()
-        return game:HttpGet(url, true)
-    end)
-    if success then
-        return {StatusCode = 200, Body = result}
-    end
-    return nil
-end
-
-local fGetHwid = gethwid or function() 
-    return game:GetService("Players").LocalPlayer.UserId 
-end
-
---// Hosts com IP direto (evita DNS)
-local hosts = {
-    "https://api.platoboost.com",
-    "https://api.platoboost.net"
-}
-local currentHostIndex = 1
-
---// Bibliotecas JSON e SHA256
-local a = 2^32
-local b = a - 1
-
-local function c(d, e)
-    local f, g = 0, 1
-    while d ~= 0 or e ~= 0 do
-        local h, i = d % 2, e % 2
-        local j = (h + i) % 2
-        f = f + j * g
-        d = math.floor(d / 2)
-        e = math.floor(e / 2)
-        g = g * 2
-    end
-    return f % a
-end
-
-local function k(d, e, l, ...)
-    local m
-    if e then
-        d = d % a
-        e = e % a
-        m = c(d, e)
-        if l then
-            m = k(m, l, ...)
+        if not success then
+            local msg = "Erro de conexão (DNS). Use VPN!";
+            onMessage(msg);
+            return false, msg;
         end
-        return m
-    elseif d then
-        return d % a
-    else
-        return 0
-    end
-end
 
-local function n(d, e, l, ...)
-    local m
-    if e then
-        d = d % a
-        e = e % a
-        m = (d + e - c(d, e)) / 2
-        if l then
-            m = n(m, l, ...)
-        end
-        return m
-    elseif d then
-        return d % a
-    else
-        return b
-    end
-end
+        if response.StatusCode == 200 then
+            local decoded = lDecode(response.Body);
 
-local function o(p)
-    return b - p
-end
-
-local function q(d, r)
-    if r < 0 then
-        return lshift(d, -r)
-    end
-    return math.floor(d % 2^32 / 2^r)
-end
-
-local function s(p, r)
-    if r > 31 or r < -31 then
-        return 0
-    end
-    return q(p % a, r)
-end
-
-local function lshift(d, r)
-    if r < 0 then
-        return s(d, -r)
-    end
-    return d * 2^r % 2^32
-end
-
-local function t(p, r)
-    p = p % a
-    r = r % 32
-    local u = n(p, 2^r - 1)
-    return s(p, r) + lshift(u, 32 - r)
-end
-
-local v = {
-    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
-    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
-    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
-    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
-}
-
-local function w(x)
-    return string.gsub(x, ".", function(l)
-        return string.format("%02x", string.byte(l))
-    end)
-end
-
-local function y(z, A)
-    local x = ""
-    for B = 1, A do
-        local C = z % 256
-        x = string.char(C) .. x
-        z = (z - C) / 256
-    end
-    return x
-end
-
-local function D(x, B)
-    local A = 0
-    for B = B, B + 3 do
-        A = A * 256 + string.byte(x, B)
-    end
-    return A
-end
-
-local function E(F, G)
-    local H = 64 - (G + 9) % 64
-    G = y(8 * G, 8)
-    F = F .. "\128" .. string.rep("\0", H) .. G
-    assert(#F % 64 == 0)
-    return F
-end
-
-local function I(J)
-    J[1] = 0x6a09e667
-    J[2] = 0xbb67ae85
-    J[3] = 0x3c6ef372
-    J[4] = 0xa54ff53a
-    J[5] = 0x510e527f
-    J[6] = 0x9b05688c
-    J[7] = 0x1f83d9ab
-    J[8] = 0x5be0cd19
-    return J
-end
-
-local function K(F, B, J)
-    local L = {}
-    for M = 1, 16 do
-        L[M] = D(F, B + (M - 1) * 4)
-    end
-    for M = 17, 64 do
-        local N = L[M - 15]
-        local O = k(t(N, 7), t(N, 18), s(N, 3))
-        N = L[M - 2]
-        L[M] = (L[M - 16] + O + L[M - 7] + k(t(N, 17), t(N, 19), s(N, 10))) % a
-    end
-    local d, e, l, P, Q, R, S, T = J[1], J[2], J[3], J[4], J[5], J[6], J[7], J[8]
-    for B = 1, 64 do
-        local O = k(t(d, 2), t(d, 13), t(d, 22))
-        local U = k(n(d, e), n(d, l), n(e, l))
-        local V = (O + U) % a
-        local W = k(t(Q, 6), t(Q, 11), t(Q, 25))
-        local X = k(n(Q, R), n(o(Q), S))
-        local Y = (T + W + X + v[B] + L[B]) % a
-        T = S
-        S = R
-        R = Q
-        Q = (P + Y) % a
-        P = l
-        l = e
-        e = d
-        d = (Y + V) % a
-    end
-    J[1] = (J[1] + d) % a
-    J[2] = (J[2] + e) % a
-    J[3] = (J[3] + l) % a
-    J[4] = (J[4] + P) % a
-    J[5] = (J[5] + Q) % a
-    J[6] = (J[6] + R) % a
-    J[7] = (J[7] + S) % a
-    J[8] = (J[8] + T) % a
-end
-
-local function Z(F)
-    F = E(F, #F)
-    local J = I({})
-    for B = 1, #F, 64 do
-        K(F, B, J)
-    end
-    return w(y(J[1], 4) .. y(J[2], 4) .. y(J[3], 4) .. y(J[4], 4) .. y(J[5], 4) .. y(J[6], 4) .. y(J[7], 4) .. y(J[8], 4))
-end
-
---// JSON Library simplificada para mobile
-local function lEncode(M)
-    local function encode(val)
-        local t = type(val)
-        if t == "nil" then
-            return "null"
-        elseif t == "boolean" then
-            return tostring(val)
-        elseif t == "number" then
-            return string.format("%.14g", val)
-        elseif t == "string" then
-            return '"' .. val:gsub('[%z\1-\31\\"]', function(c)
-                local esc = {["\\"] = "\\", ['"'] = '\"', ["\b"] = "b", ["\f"] = "f", ["\n"] = "n", ["\r"] = "r", ["\t"] = "t"}
-                return "\\" .. (esc[c] or string.format("u%04x", c:byte()))
-            end) .. '"'
-        elseif t == "table" then
-            local isArray = #val > 0
-            local parts = {}
-            if isArray then
-                for i, v in ipairs(val) do
-                    parts[i] = encode(v)
-                end
-                return "[" .. table.concat(parts, ",") .. "]"
+            if decoded.success == true then
+                cachedLink = decoded.data.url;
+                cachedTime = fOsTime();
+                return true, cachedLink;
             else
-                local i = 1
-                for k, v in pairs(val) do
-                    parts[i] = encode(tostring(k)) .. ":" .. encode(v)
-                    i = i + 1
-                end
-                return "{" .. table.concat(parts, ",") .. "}"
+                onMessage(decoded.message);
+                return false, decoded.message;
             end
+        elseif response.StatusCode == 429 then
+            local msg = "you are being rate limited, please wait 20 seconds and try again.";
+            onMessage(msg);
+            return false, msg;
         end
-        error("Cannot encode " .. t)
+
+        local msg = "Failed to cache link. Status: " .. response.StatusCode;
+        onMessage(msg);
+        return false, msg;
+    else
+        return true, cachedLink;
     end
-    return encode(M)
 end
 
-local function lDecode(str)
-    local pos = 1
-    local function skipWhitespace()
-        while pos <= #str and str:sub(pos, pos):match("%s") do
-            pos = pos + 1
-        end
-    end
-
-    local function parseValue()
-        skipWhitespace()
-        local c = str:sub(pos, pos)
-        if c == '"' then
-            return parseString()
-        elseif c == '{' then
-            return parseObject()
-        elseif c == '[' then
-            return parseArray()
-        elseif c == 't' or c == 'f' or c == 'n' then
-            return parseLiteral()
-        else
-            return parseNumber()
-        end
-    end
-
-    local function parseString()
-        pos = pos + 1
-        local result = ""
-        while pos <= #str do
-            local c = str:sub(pos, pos)
-            if c == '"' then
-                pos = pos + 1
-                return result
-            elseif c == '\\' then
-                pos = pos + 1
-                c = str:sub(pos, pos)
-                if c == 'u' then
-                    local hex = str:sub(pos + 1, pos + 4)
-                    result = result .. utf8.char(tonumber(hex, 16))
-                    pos = pos + 5
-                else
-                    local esc = {b = "\b", f = "\f", n = "\n", r = "\r", t = "\t"}
-                    result = result .. (esc[c] or c)
-                    pos = pos + 1
-                end
-            else
-                result = result .. c
-                pos = pos + 1
-            end
-        end
-        error("Unterminated string")
-    end
-
-    local function parseObject()
-        pos = pos + 1
-        local obj = {}
-        skipWhitespace()
-        if str:sub(pos, pos) == '}' then
-            pos = pos + 1
-            return obj
-        end
-        while true do
-            local key = parseValue()
-            skipWhitespace()
-            if str:sub(pos, pos) ~= ':' then error("Expected ':'") end
-            pos = pos + 1
-            local val = parseValue()
-            obj[key] = val
-            skipWhitespace()
-            local c = str:sub(pos, pos)
-            pos = pos + 1
-            if c == '}' then
-                return obj
-            elseif c ~= ',' then
-                error("Expected ',' or '}'")
-            end
-        end
-    end
-
-    local function parseArray()
-        pos = pos + 1
-        local arr = {}
-        skipWhitespace()
-        if str:sub(pos, pos) == ']' then
-            pos = pos + 1
-            return arr
-        end
-        while true do
-            table.insert(arr, parseValue())
-            skipWhitespace()
-            local c = str:sub(pos, pos)
-            pos = pos + 1
-            if c == ']' then
-                return arr
-            elseif c ~= ',' then
-                error("Expected ',' or ']'")
-            end
-        end
-    end
-
-    local function parseLiteral()
-        if str:sub(pos, pos + 3) == "true" then
-            pos = pos + 4
-            return true
-        elseif str:sub(pos, pos + 4) == "false" then
-            pos = pos + 5
-            return false
-        elseif str:sub(pos, pos + 3) == "null" then
-            pos = pos + 4
-            return nil
-        end
-        error("Invalid literal")
-    end
-
-    local function parseNumber()
-        local start = pos
-        while pos <= #str and str:sub(pos, pos):match("[%-%d%.eE%+%-]") do
-            pos = pos + 1
-        end
-        return tonumber(str:sub(start, pos - 1))
-    end
-
-    return parseValue()
-end
-
-local lDigest = Z
-
---// PlatoBoost Functions
-local requestSending = false
-local cachedLink, cachedTime = "", 0
-
---// Verificar se fRequest existe
-if not fRequest then
-    warn("⚠️ Delta: HTTP Request não detectado!")
-end
-
-local function generateNonce()
+--!optimize 2
+local generateNonce = function()
     local str = ""
     for _ = 1, 16 do
-        str = str .. string.char(math.floor(math.random() * (122 - 97 + 1)) + 97)
+        str = str .. fStringChar(fMathFloor(fMathRandom() * (122 - 97 + 1)) + 97)
     end
     return str
 end
 
-local function tryRequest(url, method, body, headers)
-    if not fRequest then
-        return nil, "HTTP não disponível"
+--!optimize 1
+for _ = 1, 5 do
+    local oNonce = generateNonce();
+    task.wait(0.2)
+    if generateNonce() == oNonce then
+        local msg = "platoboost nonce error.";
+        onMessage(msg);
+        error(msg);
+    end
+end
+
+--!optimize 2
+local copyLink = function()
+    local success, link = cacheLink();
+
+    if success then
+        -- CORREÇÃO DELTA: pcall no setclipboard
+        local clipSuccess = pcall(function()
+            fSetClipboard(link);
+        end)
+
+        if not clipSuccess then
+            -- Se não conseguir copiar, mostra no console
+            print("=" .. string.rep("=", 50))
+            print("LINK DO PLATOBOOST (COPIE MANUALMENTE):")
+            print(link)
+            print("=" .. string.rep("=", 50))
+            onMessage("Link no console (F9)!")
+        end
+
+        return true;
+    end
+    return false;
+end
+
+--!optimize 2
+local redeemKey = function(key)
+    local nonce = generateNonce();
+    local endpoint = host .. "/public/redeem/" .. fToString(service);
+
+    local body = {
+        identifier = lDigest(fGetHwid()),
+        key = key
+    }
+
+    if useNonce then
+        body.nonce = nonce;
     end
 
-    -- Delta às vezes precisa de headers específicos
-    local fullHeaders = headers or {}
-    fullHeaders["User-Agent"] = fullHeaders["User-Agent"] or "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-
+    -- CORREÇÃO DELTA: pcall
     local success, response = pcall(function()
         return fRequest({
-            Url = url,
-            Method = method or "GET",
-            Body = body,
-            Headers = fullHeaders
+            Url = endpoint,
+            Method = "POST",
+            Body = lEncode(body),
+            Headers = {
+                ["Content-Type"] = "application/json"
+            }
         })
     end)
 
     if not success then
-        -- Tentar com game:HttpGet como último recurso
-        if method == "GET" then
-            return httpGetFallback(url)
-        end
-        return nil, tostring(response)
+        onMessage("Erro de conexão. Use VPN!");
+        return false;
     end
 
-    return response
-end
+    if response.StatusCode == 200 then
+        local decoded = lDecode(response.Body);
 
-local function cacheLink()
-    if cachedTime + (10 * 60) > os.time() and cachedLink ~= "" then
-        return true, cachedLink
-    end
-
-    local hwid = fGetHwid()
-    local identifier = lDigest(hwid)
-
-    -- Tentar cada host
-    for i, host in ipairs(hosts) do
-        local response, err = tryRequest(
-            host .. "/public/start",
-            "POST",
-            lEncode({
-                service = service,
-                identifier = identifier
-            }),
-            { ["Content-Type"] = "application/json" }
-        )
-
-        if response and response.StatusCode == 200 then
-            local success, decoded = pcall(function()
-                return lDecode(response.Body)
-            end)
-
-            if success and decoded and decoded.success == true then
-                cachedLink = decoded.data.url
-                cachedTime = os.time()
-                currentHostIndex = i
-                return true, cachedLink
-            elseif success and decoded then
-                return false, decoded.message or "Erro desconhecido"
+        if decoded.success == true then
+            if decoded.data.valid == true then
+                if useNonce then
+                    if decoded.data.hash == lDigest("true" .. "-" .. nonce .. "-" .. secret) then
+                        return true;
+                    else
+                        onMessage("failed to verify integrity.");
+                        return false;
+                    end    
+                else
+                    return true;
+                end
             else
-                return false, "Erro ao decodificar JSON"
+                onMessage("key is invalid.");
+                return false;
+            end
+        else
+            if fStringSub(decoded.message, 1, 27) == "unique constraint violation" then
+                onMessage("you already have an active key, please wait for it to expire before redeeming it.");
+                return false;
+            else
+                onMessage(decoded.message);
+                return false;
             end
         end
+    elseif response.StatusCode == 429 then
+        onMessage("you are being rate limited, please wait 20 seconds and try again.");
+        return false;
+    else
+        onMessage("server returned an invalid status code, please try again later.");
+        return false; 
     end
-
-    return false, "Falha de conexão. Tente:
-1. Usar VPN (1.1.1.1)
-2. Mudar DNS do WiFi
-3. Reiniciar o jogo"
 end
 
-local function copyLink()
-    local success, link = cacheLink()
-    if success then
-        -- Tentar copiar para clipboard
-        local clipSuccess = pcall(function()
-            fSetClipboard(link)
-        end)
+--!optimize 2
+local verifyKey = function(key)
+    if requestSending == true then
+        onMessage("a request is already being sent, please slow down.");
+        return false;
+    else
+        requestSending = true;
+    end
 
-        -- Mostrar notificação no mobile
-        game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = clipSuccess and "✅ Link Copiado!" or "📋 Link no Console",
-            Text = clipSuccess and "Cole no navegador" or "Aperte F9 e copie o link",
-            Duration = 5
+    local nonce = generateNonce();
+    local endpoint = host .. "/public/whitelist/" .. fToString(service) .. "?identifier=" .. lDigest(fGetHwid()) .. "&key=" .. key;
+
+    if useNonce then
+        endpoint = endpoint .. "&nonce=" .. nonce;
+    end
+
+    -- CORREÇÃO DELTA: pcall
+    local success, response = pcall(function()
+        return fRequest({
+            Url = endpoint,
+            Method = "GET",
         })
+    end)
 
-        -- Sempre mostrar no console também (para mobile)
-        if not clipSuccess then
-            print("=" .. string.rep("=", 50))
-            print("🔗 LINK DO PLATOBOOST:")
-            print(link)
-            print("=" .. string.rep("=", 50))
-        end
+    requestSending = false;
 
-        return true, link
-    end
-    return false, link
-end
-
-local function redeemKey(key)
-    local nonce = generateNonce()
-    local endpoint = hosts[currentHostIndex] .. "/public/redeem/" .. tostring(service)
-    local body = { 
-        identifier = lDigest(fGetHwid()), 
-        key = key 
-    }
-    if useNonce then 
-        body.nonce = nonce 
-    end
-
-    local response, err = tryRequest(
-        endpoint,
-        "POST",
-        lEncode(body),
-        { ["Content-Type"] = "application/json" }
-    )
-
-    if not response then
-        return false, "Erro na conexão"
+    if not success then
+        onMessage("Erro de conexão. Use VPN!");
+        return false;
     end
 
     if response.StatusCode == 200 then
-        local success, decoded = pcall(function()
-            return lDecode(response.Body)
-        end)
+        local decoded = lDecode(response.Body);
 
-        if not success or not decoded then
-            return false, "Erro ao ler resposta"
-        end
-
-        if decoded.success and decoded.data and decoded.data.valid then
-            if useNonce then
-                if decoded.data.hash == lDigest("true" .. "-" .. nonce .. "-" .. secret) then
-                    return true
+        if decoded.success == true then
+            if decoded.data.valid == true then
+                if useNonce then
+                    if decoded.data.hash == lDigest("true" .. "-" .. nonce .. "-" .. secret) then
+                        return true;
+                    else
+                        onMessage("failed to verify integrity.");
+                        return false;
+                    end
                 else
-                    return false, "Erro de segurança"
+                    return true;
                 end
             else
-                return true
-            end
-        else
-            return false, "Key inválida"
-        end
-    elseif response.StatusCode == 429 then
-        return false, "Muitas tentativas. Aguarde."
-    end
-
-    return false, "Erro do servidor"
-end
-
-local function verifyKey(key)
-    if requestSending then 
-        return false, "Aguarde..." 
-    end
-
-    requestSending = true
-
-    local nonce = generateNonce()
-    local endpoint = hosts[currentHostIndex] .. "/public/whitelist/" .. tostring(service) .. "?identifier=" .. lDigest(fGetHwid()) .. "&key=" .. key
-    if useNonce then 
-        endpoint = endpoint .. "&nonce=" .. nonce 
-    end
-
-    local response, err = tryRequest(endpoint, "GET")
-
-    requestSending = false
-
-    if not response then
-        return false, "Sem conexão. Use VPN."
-    end
-
-    if response.StatusCode == 200 then
-        local success, decoded = pcall(function()
-            return lDecode(response.Body)
-        end)
-
-        if not success or not decoded then
-            return false, "Erro ao processar"
-        end
-
-        if decoded.success and decoded.data and decoded.data.valid then
-            if useNonce then
-                if decoded.data.hash == lDigest("true" .. "-" .. nonce .. "-" .. secret) then
-                    return true
+                if fStringSub(key, 1, 4) == "KEY_" then
+                    return redeemKey(key);
                 else
-                    return false, "Erro de validação"
+                    onMessage("key is invalid.");
+                    return false;
                 end
-            else
-                return true
             end
         else
-            if string.sub(key, 1, 4) == "KEY_" then
-                return redeemKey(key)
-            else
-                return false, "Key incorreta"
-            end
+            onMessage(decoded.message);
+            return false;
         end
     elseif response.StatusCode == 429 then
-        return false, "Muitas tentativas (20s)"
+        onMessage("you are being rate limited, please wait 20 seconds and try again.");
+        return false;
+    else
+        onMessage("server returned an invalid status code, please try again later.");
+        return false;
     end
-
-    return false, "Erro " .. response.StatusCode
 end
 
---// UI Creation (Otimizado para mobile/Delta)
+-------------------------------------------------------------------------------
+--! UI PARA DELTA (Mobile-friendly)
+-------------------------------------------------------------------------------
+
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
@@ -645,88 +306,98 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 --// ScreenGui
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "ModernKeySystem"
+ScreenGui.Name = "PlatoBoostUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = PlayerGui
 
---// Main Frame (Tamanho ajustado para mobile)
+--// Main Frame (Mobile size)
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 380, 0, 260)
-MainFrame.Position = UDim2.new(0.5, -190, 0.5, -130)
+MainFrame.Size = UDim2.new(0, 360, 0, 280)
+MainFrame.Position = UDim2.new(0.5, -180, 0.5, -140)
 MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 MainFrame.BorderSizePixel = 0
 MainFrame.Parent = ScreenGui
 
---// Corner
 local Corner = Instance.new("UICorner")
-Corner.CornerRadius = UDim.new(0, 12)
+Corner.CornerRadius = UDim.new(0, 10)
 Corner.Parent = MainFrame
-
---// Shadow
-local Shadow = Instance.new("ImageLabel")
-Shadow.Name = "Shadow"
-Shadow.AnchorPoint = Vector2.new(0.5, 0.5)
-Shadow.BackgroundTransparency = 1
-Shadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-Shadow.Size = UDim2.new(1, 40, 1, 40)
-Shadow.ZIndex = -1
-Shadow.Image = "rbxassetid://6014261993"
-Shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-Shadow.ImageTransparency = 0.5
-Shadow.Parent = MainFrame
 
 --// Title
 local Title = Instance.new("TextLabel")
-Title.Name = "Title"
-Title.Size = UDim2.new(1, 0, 0, 45)
+Title.Size = UDim2.new(1, 0, 0, 40)
 Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 0, 0, 10)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "🔑 KEY SYSTEM"
+Title.Text = "🔑 PlatoBoost Key"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 22
+Title.TextSize = 20
 Title.Parent = MainFrame
 
---// Subtitle (Place Info)
-local Subtitle = Instance.new("TextLabel")
-Subtitle.Name = "Subtitle"
-Subtitle.Size = UDim2.new(1, -40, 0, 18)
-Subtitle.BackgroundTransparency = 1
-Subtitle.Position = UDim2.new(0, 20, 0, 50)
-Subtitle.Font = Enum.Font.Gotham
-Subtitle.Text = "Place: " .. CurrentPlaceId:sub(1, 10) .. "..." .. (HasScript and " ✅" or " ❌")
-Subtitle.TextColor3 = HasScript and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100)
-Subtitle.TextSize = 13
-Subtitle.Parent = MainFrame
+--// Place Info
+local PlaceLabel = Instance.new("TextLabel")
+PlaceLabel.Size = UDim2.new(1, -20, 0, 20)
+PlaceLabel.BackgroundTransparency = 1
+PlaceLabel.Position = UDim2.new(0, 10, 0, 50)
+PlaceLabel.Font = Enum.Font.Gotham
+PlaceLabel.Text = "Place: " .. CurrentPlaceId:sub(1, 12) .. "..." .. (HasScript and " ✅" or " ❌")
+PlaceLabel.TextColor3 = HasScript and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100)
+PlaceLabel.TextSize = 12
+PlaceLabel.Parent = MainFrame
 
 --// Key Input
 local KeyBox = Instance.new("TextBox")
-KeyBox.Name = "KeyBox"
-KeyBox.Size = UDim2.new(1, -40, 0, 42)
-KeyBox.Position = UDim2.new(0, 20, 0, 80)
+KeyBox.Size = UDim2.new(1, -30, 0, 40)
+KeyBox.Position = UDim2.new(0, 15, 0, 80)
 KeyBox.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
 KeyBox.BorderSizePixel = 0
 KeyBox.Font = Enum.Font.Gotham
-KeyBox.PlaceholderText = "Cole sua key aqui..."
+KeyBox.PlaceholderText = "Digite sua key aqui..."
 KeyBox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
 KeyBox.Text = ""
 KeyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 KeyBox.TextSize = 14
-KeyBox.ClearTextOnFocus = false
 KeyBox.Parent = MainFrame
 
-local KeyBoxCorner = Instance.new("UICorner")
-KeyBoxCorner.CornerRadius = UDim.new(0, 8)
-KeyBoxCorner.Parent = KeyBox
+local KeyCorner = Instance.new("UICorner")
+KeyCorner.CornerRadius = UDim.new(0, 8)
+KeyCorner.Parent = KeyBox
 
---// Status Label
+--// Buttons
+local GetKeyBtn = Instance.new("TextButton")
+GetKeyBtn.Size = UDim2.new(0.48, -5, 0, 40)
+GetKeyBtn.Position = UDim2.new(0, 15, 0, 135)
+GetKeyBtn.BackgroundColor3 = Color3.fromRGB(30, 140, 240)
+GetKeyBtn.Font = Enum.Font.GothamBold
+GetKeyBtn.Text = "GET KEY"
+GetKeyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+GetKeyBtn.TextSize = 13
+GetKeyBtn.Parent = MainFrame
+
+local GetCorner = Instance.new("UICorner")
+GetCorner.CornerRadius = UDim.new(0, 8)
+GetCorner.Parent = GetKeyBtn
+
+local CheckBtn = Instance.new("TextButton")
+CheckBtn.Size = UDim2.new(0.48, -5, 0, 40)
+CheckBtn.Position = UDim2.new(0.52, 5, 0, 135)
+CheckBtn.BackgroundColor3 = Color3.fromRGB(40, 180, 80)
+CheckBtn.Font = Enum.Font.GothamBold
+CheckBtn.Text = "CHECK KEY"
+CheckBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CheckBtn.TextSize = 13
+CheckBtn.Parent = MainFrame
+
+local CheckCorner = Instance.new("UICorner")
+CheckCorner.CornerRadius = UDim.new(0, 8)
+CheckCorner.Parent = CheckBtn
+
+--// Status
 local StatusLabel = Instance.new("TextLabel")
-StatusLabel.Name = "Status"
-StatusLabel.Size = UDim2.new(1, -40, 0, 35)
+StatusLabel.Size = UDim2.new(1, -30, 0, 40)
 StatusLabel.BackgroundTransparency = 1
-StatusLabel.Position = UDim2.new(0, 20, 0, 128)
+StatusLabel.Position = UDim2.new(0, 15, 0, 185)
 StatusLabel.Font = Enum.Font.Gotham
 StatusLabel.Text = ""
 StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -734,139 +405,31 @@ StatusLabel.TextSize = 11
 StatusLabel.TextWrapped = true
 StatusLabel.Parent = MainFrame
 
---// Buttons Container
-local ButtonsFrame = Instance.new("Frame")
-ButtonsFrame.Name = "Buttons"
-ButtonsFrame.Size = UDim2.new(1, -40, 0, 42)
-ButtonsFrame.Position = UDim2.new(0, 20, 0, 168)
-ButtonsFrame.BackgroundTransparency = 1
-ButtonsFrame.Parent = MainFrame
+--// Info
+local InfoLabel = Instance.new("TextLabel")
+InfoLabel.Size = UDim2.new(1, -20, 0, 40)
+InfoLabel.BackgroundTransparency = 1
+InfoLabel.Position = UDim2.new(0, 10, 0, 230)
+InfoLabel.Font = Enum.Font.Gotham
+InfoLabel.Text = HasScript and "✅ Script disponível para este jogo!" or "❌ Sem script para este Place ID"
+InfoLabel.TextColor3 = HasScript and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100)
+InfoLabel.TextSize = 11
+InfoLabel.TextWrapped = true
+InfoLabel.Parent = MainFrame
 
---// Check Key Button (Green)
-local CheckButton = Instance.new("TextButton")
-CheckButton.Name = "CheckKey"
-CheckButton.Size = UDim2.new(0.48, 0, 1, 0)
-CheckButton.BackgroundColor3 = Color3.fromRGB(40, 180, 80)
-CheckButton.BorderSizePixel = 0
-CheckButton.Font = Enum.Font.GothamBold
-CheckButton.Text = "VERIFICAR"
-CheckButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-CheckButton.TextSize = 13
-CheckButton.AutoButtonColor = false
-CheckButton.Parent = ButtonsFrame
-
-local CheckCorner = Instance.new("UICorner")
-CheckCorner.CornerRadius = UDim.new(0, 8)
-CheckCorner.Parent = CheckButton
-
---// Get Key Button (Blue)
-local GetButton = Instance.new("TextButton")
-GetButton.Name = "GetKey"
-GetButton.Size = UDim2.new(0.48, 0, 1, 0)
-GetButton.Position = UDim2.new(0.52, 0, 0, 0)
-GetButton.BackgroundColor3 = Color3.fromRGB(30, 140, 240)
-GetButton.BorderSizePixel = 0
-GetButton.Font = Enum.Font.GothamBold
-GetButton.Text = "PEGAR KEY"
-GetButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-GetButton.TextSize = 13
-GetButton.AutoButtonColor = false
-GetButton.Parent = ButtonsFrame
-
-local GetCorner = Instance.new("UICorner")
-GetCorner.CornerRadius = UDim.new(0, 8)
-GetCorner.Parent = GetButton
-
---// Game List Frame (Bottom)
-local GameListFrame = Instance.new("Frame")
-GameListFrame.Name = "GameList"
-GameListFrame.Size = UDim2.new(1, -40, 0, 40)
-GameListFrame.Position = UDim2.new(0, 20, 0, 215)
-GameListFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-GameListFrame.BorderSizePixel = 0
-GameListFrame.Parent = MainFrame
-
-local GameListCorner = Instance.new("UICorner")
-GameListCorner.CornerRadius = UDim.new(0, 8)
-GameListCorner.Parent = GameListFrame
-
-local GameListText = Instance.new("TextLabel")
-GameListText.Size = UDim2.new(1, -10, 1, 0)
-GameListText.Position = UDim2.new(0, 5, 0, 0)
-GameListText.BackgroundTransparency = 1
-GameListText.Font = Enum.Font.Gotham
-GameListText.Text = HasScript and "✅ Script disponível!" or "❌ Sem script para este jogo"
-GameListText.TextColor3 = HasScript and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100)
-GameListText.TextSize = 11
-GameListText.TextWrapped = true
-GameListText.Parent = GameListFrame
-
---// Button Hover Effects
-local function AddHoverEffect(button, originalColor)
-    button.MouseEnter:Connect(function()
-        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = originalColor:Lerp(Color3.fromRGB(255, 255, 255), 0.1)}):Play()
-    end)
-    button.MouseLeave:Connect(function()
-        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = originalColor}):Play()
-    end)
-end
-
-AddHoverEffect(CheckButton, Color3.fromRGB(40, 180, 80))
-AddHoverEffect(GetButton, Color3.fromRGB(30, 140, 240))
-
---// Functions
-local function ShowStatus(message, isError)
-    StatusLabel.Text = message
+--// Funções da UI
+local function ShowStatus(msg, isError)
+    StatusLabel.Text = msg
     StatusLabel.TextColor3 = isError and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(100, 255, 100)
-    TweenService:Create(StatusLabel, TweenInfo.new(0.3), {TextTransparency = 0}):Play()
-
-    task.delay(4, function()
-        TweenService:Create(StatusLabel, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
-    end)
 end
 
-local function ExecuteScript()
-    if not HasScript then
-        ShowStatus("Sem script para este jogo!", true)
-        return
-    end
-
-    local scriptUrl = Scripts[CurrentPlaceId]
-
-    if type(scriptUrl) == "table" then
-        for _, url in ipairs(scriptUrl) do
-            pcall(function()
-                loadstring(game:HttpGet(url, true))()
-            end)
-        end
-    else
-        pcall(function()
-            loadstring(game:HttpGet(scriptUrl, true))()
-        end)
-    end
-
-    -- Close UI
-    TweenService:Create(MainFrame, TweenInfo.new(0.5), {Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0)}):Play()
-    task.delay(0.5, function()
-        ScreenGui:Destroy()
-    end)
-end
-
---// Button Connections
-GetButton.MouseButton1Click:Connect(function()
-    ShowStatus("Conectando...", false)
-
-    task.spawn(function()
-        local success, link = copyLink()
-        if success then
-            ShowStatus("Link obtido! Verifique o F9", false)
-        else
-            ShowStatus(tostring(link):sub(1, 50), true)
-        end
-    end)
+--// Conexões
+GetKeyBtn.MouseButton1Click:Connect(function()
+    ShowStatus("Obtendo link...", false)
+    copyLink()
 end)
 
-CheckButton.MouseButton1Click:Connect(function()
+CheckBtn.MouseButton1Click:Connect(function()
     local key = KeyBox.Text:gsub("%s+", "")
     if key == "" then
         ShowStatus("Digite uma key!", true)
@@ -876,50 +439,41 @@ CheckButton.MouseButton1Click:Connect(function()
     ShowStatus("Verificando...", false)
 
     task.spawn(function()
-        local success, err = verifyKey(key)
+        local success = verifyKey(key)
         if success then
             ShowStatus("✅ Key válida! Carregando...", false)
-            task.wait(1)
-            ExecuteScript()
+
+            -- Executar script
+            if HasScript then
+                local scriptUrl = Scripts[CurrentPlaceId]
+                if type(scriptUrl) == "table" then
+                    for _, url in ipairs(scriptUrl) do
+                        pcall(function()
+                            loadstring(game:HttpGet(url, true))()
+                        end)
+                    end
+                else
+                    pcall(function()
+                        loadstring(game:HttpGet(scriptUrl, true))()
+                    end)
+                end
+            end
+
+            task.wait(2)
+            ScreenGui:Destroy()
         else
-            ShowStatus("❌ " .. tostring(err), true)
+            ShowStatus("❌ Key inválida ou erro", true)
         end
     end)
 end)
 
---// Intro Animation
+--// Animação
 MainFrame.Size = UDim2.new(0, 0, 0, 0)
 MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-
 TweenService:Create(MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back), {
-    Size = UDim2.new(0, 380, 0, 260),
-    Position = UDim2.new(0.5, -190, 0.5, -130)
+    Size = UDim2.new(0, 360, 0, 280),
+    Position = UDim2.new(0.5, -180, 0.5, -140)
 }):Play()
 
---// Drag Functionality (Melhorado para touch)
-local dragging, dragStart, startPos
-
-MainFrame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = MainFrame.Position
-    end
-end)
-
-game:GetService("UserInputService").InputChanged:Connect(function(input)
-    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        local delta = input.Position - dragStart
-        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-end)
-
-game:GetService("UserInputService").InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = false
-    end
-end)
-
-print("✅ Delta Key System Loaded")
-print("📱 Modo Mobile ativado")
-print("💡 Dica: Se der erro de DNS, use o app 1.1.1.1 (VPN grátis)")
+print("✅ PlatoBoost OFICIAL carregado (versão Delta)")
+print("🌐 Host: " .. host)

@@ -123,7 +123,7 @@ local copyLink = function()
                 fSetClipboard(link)
             end)
             if clipOk then
-                onMessage("✅ Link copiado!")
+                onMessage("✅ Link copied!")
             else
                 print("LINK: " .. link)
                 onMessage("Link no console (F9)")
@@ -303,7 +303,7 @@ checkCorner.Parent = checkBtn
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, -30, 0, 30)
 statusLabel.Position = UDim2.new(0, 15, 0, 170)
-statusLabel.Text = HasScript and "✅ Script disponível!" or "❌ Sem script"
+statusLabel.Text = HasScript and "✅ Script available" or "❌ There's no script in this place"
 statusLabel.Font = Enum.Font.Gotham
 statusLabel.TextColor3 = HasScript and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100)
 statusLabel.TextSize = 12
@@ -334,17 +334,17 @@ end)
 checkBtn.MouseButton1Click:Connect(function()
     local key = keyBox.Text:gsub("%s+", "")
     if key == "" then
-        statusLabel.Text = "❌ Digite uma key!"
+        statusLabel.Text = "❌ first enter a key!"
         statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
         return
     end
 
-    statusLabel.Text = "⏳ Verificando..."
+    statusLabel.Text = "⏳ Checking..."
     statusLabel.TextColor3 = Color3.fromRGB(255, 255, 100)
 
     task.spawn(function()
         if verifyKey(key) then
-            statusLabel.Text = "✅ Key válida! Executando..."
+            statusLabel.Text = "✅ Key valid! executing..."
             statusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
 
             -- Executar script do Place ID
@@ -368,7 +368,7 @@ checkBtn.MouseButton1Click:Connect(function()
             task.wait(0.5)
             screenGui:Destroy()
         else
-            statusLabel.Text = "❌ Key inválida"
+            statusLabel.Text = "❌ Key invalid"
             statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
         end
     end)
@@ -382,6 +382,6 @@ TweenService:Create(frame, TweenInfo.new(0.5, Enum.EasingStyle.Back), {
     Position = UDim2.new(0.5, -170, 0.5, -110)
 }):Play()
 
-print("✅ PlatoBoost carregado!")
-print("🌐 Host: " .. host)
-print("🎮 Place ID: " .. CurrentPlaceId .. (HasScript and " (Suportado)" or " (Não suportado)"))
+print("✅ PT PlatoBoost carregado!")
+print("🌐 PT Host: " .. host)
+print("🎮 PT Place ID: " .. CurrentPlaceId .. (HasScript and " (Suportado)" or " (Não suportado)"))

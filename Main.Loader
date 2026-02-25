@@ -1,4 +1,4 @@
---// PlatoBoost Key System - SÓ A PARTE DO PLATOBOOST (com proteção Delta)
+--// PlatoBoost Key System - Correção Host + Proteção Delta
 --// Configuração
 local service = 4314;
 local secret = "851b9074-f28e-427c-8cfe-aefac3e17b59";
@@ -53,33 +53,20 @@ local fSetClipboard, fRequest, fStringChar, fToString, fStringSub, fOsTime, fMat
 
 local cachedLink, cachedTime = "", 0;
 
---// Verificar se fRequest existe (proteção Delta)
+--// Verificar se fRequest existe
 if not fRequest then
-    onMessage("ERRO: HTTP Request não disponível neste executor!")
+    onMessage("ERRO: HTTP Request não disponível!")
     error("HTTP Request não disponível")
 end
 
---// Selecionar host
-local host = "https://api.platoboost.com";
+--// CORREÇÃO DISCORD: Host correto é platoboost.app (não .com)
+local host = "https://api.platoboost.app";
+print("[PlatoBoost] Host configurado: " .. host)
 
---// CORREÇÃO DELTA: Testar conectividade com pcall
-local success, hostResponse = pcall(function()
-    return fRequest({
-        Url = host .. "/public/connectivity",
-        Method = "GET"
-    })
-end)
-
-if not success or not hostResponse or (hostResponse.StatusCode ~= 200 and hostResponse.StatusCode ~= 429) then
-    host = "https://api.platoboost.net";
-    print("[PlatoBoost] Usando host alternativo: " .. host)
-end
-
---// Funções do PlatoBoost (OFICIAIS com proteção pcall)
+--// Funções do PlatoBoost com proteção pcall
 
 function cacheLink()
     if cachedTime + (10*60) < fOsTime() then
-        -- CORREÇÃO DELTA: pcall na requisição
         local success, response = pcall(function()
             return fRequest({
                 Url = host .. "/public/start",
@@ -95,7 +82,7 @@ function cacheLink()
         end)
 
         if not success then
-            local msg = "Erro de conexão (DNS). Use VPN!";
+            local msg = "Erro de conexão: " .. tostring(response);
             onMessage(msg);
             return false, msg;
         end
@@ -106,6 +93,7 @@ function cacheLink()
             if decoded.success == true then
                 cachedLink = decoded.data.url;
                 cachedTime = fOsTime();
+                print("[PlatoBoost] Link obtido com sucesso!")
                 return true, cachedLink;
             else
                 onMessage(decoded.message);
@@ -151,12 +139,13 @@ local copyLink = function()
     local success, link = cacheLink();
 
     if success then
-        -- CORREÇÃO DELTA: pcall no setclipboard
         local clipSuccess = pcall(function()
             fSetClipboard(link);
         end)
 
-        if not clipSuccess then
+        if clipSuccess then
+            onMessage("✅ Link copiado!")
+        else
             print("=" .. string.rep("=", 40))
             print("LINK DO PLATOBOOST:")
             print(link)
@@ -182,7 +171,6 @@ local redeemKey = function(key)
         body.nonce = nonce;
     end
 
-    -- CORREÇÃO DELTA: pcall
     local success, response = pcall(function()
         return fRequest({
             Url = endpoint,
@@ -195,7 +183,7 @@ local redeemKey = function(key)
     end)
 
     if not success then
-        onMessage("Erro de conexão. Use VPN!");
+        onMessage("Erro de conexão. Tente novamente.");
         return false;
     end
 
@@ -251,7 +239,6 @@ local verifyKey = function(key)
         endpoint = endpoint .. "&nonce=" .. nonce;
     end
 
-    -- CORREÇÃO DELTA: pcall
     local success, response = pcall(function()
         return fRequest({
             Url = endpoint,
@@ -262,7 +249,7 @@ local verifyKey = function(key)
     requestSending = false;
 
     if not success then
-        onMessage("Erro de conexão. Use VPN!");
+        onMessage("Erro de conexão. Verifique sua internet/VPN.");
         return false;
     end
 
@@ -302,7 +289,7 @@ local verifyKey = function(key)
     end
 end
 
---// UI SIMPLES (para teste)
+--// UI
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
@@ -313,66 +300,110 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
 local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 300, 0, 200)
-Frame.Position = UDim2.new(0.5, -150, 0.5, -100)
-Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Frame.Size = UDim2.new(0, 320, 0, 220)
+Frame.Position = UDim2.new(0.5, -160, 0.5, -110)
+Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+Frame.BorderSizePixel = 0
 Frame.Parent = ScreenGui
 
+local Corner = Instance.new("UICorner")
+Corner.CornerRadius = UDim.new(0, 10)
+Corner.Parent = Frame
+
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 0, 30)
-Title.Text = "PlatoBoost Key System"
+Title.Size = UDim2.new(1, 0, 0, 35)
+Title.Text = "🔑 PlatoBoost Key"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
 Title.BackgroundTransparency = 1
 Title.Parent = Frame
 
+local PlaceLabel = Instance.new("TextLabel")
+PlaceLabel.Size = UDim2.new(1, 0, 0, 20)
+PlaceLabel.Position = UDim2.new(0, 0, 0, 35)
+PlaceLabel.Text = "Place ID: " .. CurrentPlaceId:sub(1, 10) .. "..."
+PlaceLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+PlaceLabel.Font = Enum.Font.Gotham
+PlaceLabel.TextSize = 12
+PlaceLabel.BackgroundTransparency = 1
+PlaceLabel.Parent = Frame
+
 local KeyBox = Instance.new("TextBox")
-KeyBox.Size = UDim2.new(0.8, 0, 0, 30)
-KeyBox.Position = UDim2.new(0.1, 0, 0.3, 0)
+KeyBox.Size = UDim2.new(0.8, 0, 0, 35)
+KeyBox.Position = UDim2.new(0.1, 0, 0, 65)
 KeyBox.PlaceholderText = "Digite sua key..."
 KeyBox.Text = ""
+KeyBox.Font = Enum.Font.Gotham
+KeyBox.TextSize = 14
+KeyBox.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+KeyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 KeyBox.Parent = Frame
 
+local KeyCorner = Instance.new("UICorner")
+KeyCorner.CornerRadius = UDim.new(0, 6)
+KeyCorner.Parent = KeyBox
+
 local GetBtn = Instance.new("TextButton")
-GetBtn.Size = UDim2.new(0.35, 0, 0, 30)
-GetBtn.Position = UDim2.new(0.1, 0, 0.6, 0)
+GetBtn.Size = UDim2.new(0.35, 0, 0, 35)
+GetBtn.Position = UDim2.new(0.1, 0, 0, 115)
 GetBtn.Text = "GET KEY"
+GetBtn.Font = Enum.Font.GothamBold
+GetBtn.TextSize = 13
 GetBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
 GetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 GetBtn.Parent = Frame
 
+local GetCorner = Instance.new("UICorner")
+GetCorner.CornerRadius = UDim.new(0, 6)
+GetCorner.Parent = GetBtn
+
 local CheckBtn = Instance.new("TextButton")
-CheckBtn.Size = UDim2.new(0.35, 0, 0, 30)
-CheckBtn.Position = UDim2.new(0.55, 0, 0.6, 0)
-CheckBtn.Text = "CHECK KEY"
+CheckBtn.Size = UDim2.new(0.35, 0, 0, 35)
+CheckBtn.Position = UDim2.new(0.55, 0, 0, 115)
+CheckBtn.Text = "CHECK"
+CheckBtn.Font = Enum.Font.GothamBold
+CheckBtn.TextSize = 13
 CheckBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
 CheckBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 CheckBtn.Parent = Frame
 
+local CheckCorner = Instance.new("UICorner")
+CheckCorner.CornerRadius = UDim.new(0, 6)
+CheckCorner.Parent = CheckBtn
+
 local Status = Instance.new("TextLabel")
-Status.Size = UDim2.new(0.8, 0, 0, 30)
-Status.Position = UDim2.new(0.1, 0, 0.8, 0)
-Status.Text = ""
-Status.TextColor3 = Color3.fromRGB(255, 255, 255)
+Status.Size = UDim2.new(0.8, 0, 0, 40)
+Status.Position = UDim2.new(0.1, 0, 0, 165)
+Status.Text = HasScript and "✅ Script disponível!" or "❌ Sem script"
+Status.TextColor3 = HasScript and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100)
+Status.Font = Enum.Font.Gotham
+Status.TextSize = 12
 Status.BackgroundTransparency = 1
+Status.TextWrapped = true
 Status.Parent = Frame
 
 GetBtn.MouseButton1Click:Connect(function()
     Status.Text = "Obtendo link..."
+    Status.TextColor3 = Color3.fromRGB(255, 255, 255)
     copyLink()
 end)
 
 CheckBtn.MouseButton1Click:Connect(function()
-    local key = KeyBox.Text
+    local key = KeyBox.Text:gsub("%s+", "")
     if key == "" then
-        Status.Text = "Digite uma key!"
+        Status.Text = "❌ Digite uma key!"
+        Status.TextColor3 = Color3.fromRGB(255, 100, 100)
         return
     end
-    Status.Text = "Verificando..."
+    Status.Text = "⏳ Verificando..."
+    Status.TextColor3 = Color3.fromRGB(255, 255, 100)
 
     task.spawn(function()
         local success = verifyKey(key)
         if success then
-            Status.Text = "✅ Key válida!"
+            Status.Text = "✅ Key válida! Carregando..."
+            Status.TextColor3 = Color3.fromRGB(100, 255, 100)
             if HasScript then
                 local url = Scripts[CurrentPlaceId]
                 if type(url) == "table" then
@@ -386,10 +417,12 @@ CheckBtn.MouseButton1Click:Connect(function()
             task.wait(2)
             ScreenGui:Destroy()
         else
-            Status.Text = "❌ Key inválida"
+            Status.Text = "❌ Key inválida ou erro"
+            Status.TextColor3 = Color3.fromRGB(255, 100, 100)
         end
     end)
 end)
 
 print("✅ PlatoBoost carregado!")
 print("🌐 Host: " .. host)
+print("🛡️  Proteções Delta ativadas")

@@ -1,7 +1,7 @@
 --// PlatoBoost Key System - Delta Executor Edition
 --// Otimizado para executores mobile (Delta, Codex, etc) V3
 
---// Service Configuration
+--// Service Configuration.
 local service = 4314;
 local secret = "851b9074-f28e-427c-8cfe-aefac3e17b59";
 local useNonce = true;

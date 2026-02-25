@@ -1,4 +1,4 @@
---// PlatoBoost Key System Integration v2
+--// PlatoBoost Key System Integration
 --// Service Configuration
 local service = 4314;
 local secret = "851b9074-f28e-427c-8cfe-aefac3e17b59";
@@ -23,6 +23,18 @@ local Scripts = {
 --// Place ID atual
 local CurrentPlaceId = tostring(game.PlaceId)
 local HasScript = Scripts[CurrentPlaceId] ~= nil
+
+--// Detectar funções do executor
+local fSetClipboard = (syn and syn.write_clipboard) or setclipboard or toclipboard or function(text)
+    -- Fallback: mostra no console se não tiver setclipboard
+    print("[CLIPBOARD] " .. text)
+    return true
+end
+
+local fRequest = (syn and syn.request) or (http and http.request) or http_request or request
+local fGetHwid = (syn and syn.gethwid) or gethwid or function() 
+    return game:GetService("Players").LocalPlayer.UserId 
+end
 
 --// Bibliotecas JSON e SHA256 (corrigidas)
 local a = 2^32
@@ -374,54 +386,61 @@ local lDigest = Z
 
 --// PlatoBoost Functions
 local requestSending = false
-local fSetClipboard = setclipboard or toclipboard
-local fRequest = request or http_request or syn_request
-local fStringChar = string.char
-local fToString = tostring
-local fStringSub = string.sub
-local fOsTime = os.time
-local fMathRandom = math.random
-local fMathFloor = math.floor
-local fGetHwid = gethwid or function() return game:GetService("Players").LocalPlayer.UserId end
-
 local cachedLink, cachedTime = "", 0
 local host = "https://api.platoboost.com"
+
+--// Verificar se fRequest existe
+if not fRequest then
+    warn("HTTP Request não disponível! Verifique se seu executor suporta request/http_request")
+end
 
 local function generateNonce()
     local str = ""
     for _ = 1, 16 do
-        str = str .. fStringChar(fMathFloor(fMathRandom() * (122 - 97 + 1)) + 97)
+        str = str .. string.char(math.floor(math.random() * (122 - 97 + 1)) + 97)
     end
     return str
 end
 
 local function cacheLink()
-    if cachedTime + (10 * 60) < fOsTime() then
+    if not fRequest then
+        return false, "HTTP Request não disponível"
+    end
+
+    if cachedTime + (10 * 60) < os.time() then
+        local hwid = fGetHwid()
+        local identifier = lDigest(hwid)
+
         local success, response = pcall(function()
             return fRequest({
                 Url = host .. "/public/start",
                 Method = "POST",
                 Body = lEncode({
                     service = service,
-                    identifier = lDigest(fGetHwid())
+                    identifier = identifier
                 }),
                 Headers = { ["Content-Type"] = "application/json" }
             })
         end)
 
-        if success and response.StatusCode == 200 then
+        if not success then
+            return false, "Erro na requisição: " .. tostring(response)
+        end
+
+        if response.StatusCode == 200 then
             local decoded = lDecode(response.Body)
             if decoded.success == true then
                 cachedLink = decoded.data.url
-                cachedTime = fOsTime()
+                cachedTime = os.time()
                 return true, cachedLink
             else
-                return false, decoded.message
+                return false, decoded.message or "Erro desconhecido"
             end
-        elseif success and response.StatusCode == 429 then
-            return false, "Rate limited, wait 20s"
+        elseif response.StatusCode == 429 then
+            return false, "Rate limited, aguarde 20s"
+        else
+            return false, "Status: " .. response.StatusCode
         end
-        return false, "Failed to cache link"
     else
         return true, cachedLink
     end
@@ -430,19 +449,30 @@ end
 local function copyLink()
     local success, link = cacheLink()
     if success then
-        pcall(function()
+        local clipSuccess = pcall(function()
             fSetClipboard(link)
         end)
-        return true
+        if clipSuccess then
+            return true, link
+        else
+            return false, "Falha ao copiar, mas link obtido: " .. link
+        end
     end
-    return false
+    return false, link
 end
 
 local function redeemKey(key)
+    if not fRequest then return false, "HTTP Request não disponível" end
+
     local nonce = generateNonce()
-    local endpoint = host .. "/public/redeem/" .. fToString(service)
-    local body = { identifier = lDigest(fGetHwid()), key = key }
-    if useNonce then body.nonce = nonce end
+    local endpoint = host .. "/public/redeem/" .. tostring(service)
+    local body = { 
+        identifier = lDigest(fGetHwid()), 
+        key = key 
+    }
+    if useNonce then 
+        body.nonce = nonce 
+    end
 
     local success, response = pcall(function()
         return fRequest({
@@ -453,43 +483,8 @@ local function redeemKey(key)
         })
     end)
 
-    if success and response.StatusCode == 200 then
-        local decoded = lDecode(response.Body)
-        if decoded.success and decoded.data.valid then
-            if useNonce then
-                if decoded.data.hash == lDigest("true" .. "-" .. nonce .. "-" .. secret) then
-                    return true
-                else
-                    return false, "Integrity check failed"
-                end
-            else
-                return true
-            end
-        else
-            return false, "Invalid key"
-        end
-    elseif success and response.StatusCode == 429 then
-        return false, "Rate limited"
-    end
-    return false, "Server error"
-end
-
-local function verifyKey(key)
-    if requestSending then return false, "Request in progress" end
-    requestSending = true
-
-    local nonce = generateNonce()
-    local endpoint = host .. "/public/whitelist/" .. fToString(service) .. "?identifier=" .. lDigest(fGetHwid()) .. "&key=" .. key
-    if useNonce then endpoint = endpoint .. "&nonce=" .. nonce end
-
-    local success, response = pcall(function()
-        return fRequest({ Url = endpoint, Method = "GET" })
-    end)
-
-    requestSending = false
-
     if not success then
-        return false, "Request failed"
+        return false, "Erro na requisição"
     end
 
     if response.StatusCode == 200 then
@@ -499,22 +494,68 @@ local function verifyKey(key)
                 if decoded.data.hash == lDigest("true" .. "-" .. nonce .. "-" .. secret) then
                     return true
                 else
-                    return false, "Integrity check failed"
+                    return false, "Falha na verificação de integridade"
                 end
             else
                 return true
             end
         else
-            if fStringSub(key, 1, 4) == "KEY_" then
+            return false, "Key inválida"
+        end
+    elseif response.StatusCode == 429 then
+        return false, "Rate limited"
+    end
+    return false, "Erro no servidor"
+end
+
+local function verifyKey(key)
+    if not fRequest then return false, "HTTP Request não disponível" end
+    if requestSending then return false, "Requisição em andamento" end
+
+    requestSending = true
+
+    local nonce = generateNonce()
+    local endpoint = host .. "/public/whitelist/" .. tostring(service) .. "?identifier=" .. lDigest(fGetHwid()) .. "&key=" .. key
+    if useNonce then 
+        endpoint = endpoint .. "&nonce=" .. nonce 
+    end
+
+    local success, response = pcall(function()
+        return fRequest({ 
+            Url = endpoint, 
+            Method = "GET" 
+        })
+    end)
+
+    requestSending = false
+
+    if not success then
+        return false, "Erro na requisição: " .. tostring(response)
+    end
+
+    if response.StatusCode == 200 then
+        local decoded = lDecode(response.Body)
+        if decoded.success and decoded.data.valid then
+            if useNonce then
+                if decoded.data.hash == lDigest("true" .. "-" .. nonce .. "-" .. secret) then
+                    return true
+                else
+                    return false, "Falha na verificação de integridade"
+                end
+            else
+                return true
+            end
+        else
+            if string.sub(key, 1, 4) == "KEY_" then
                 return redeemKey(key)
             else
-                return false, "Invalid key"
+                return false, "Key inválida"
             end
         end
     elseif response.StatusCode == 429 then
-        return false, "Rate limited, wait 20s"
+        return false, "Rate limited, aguarde 20s"
     end
-    return false, "Server error"
+    return false, "Erro no servidor: " .. response.StatusCode
 end
 
 --// UI Creation
@@ -741,31 +782,36 @@ end
 
 --// Button Connections
 GetButton.MouseButton1Click:Connect(function()
-    local success = copyLink()
-    if success then
-        ShowStatus("✅ Link copied to clipboard!", false)
-    else
-        ShowStatus("❌ Failed to get link", true)
-    end
+    ShowStatus("⏳ Obtendo link...", false)
+
+    task.spawn(function()
+        local success, result = copyLink()
+        if success then
+            ShowStatus("✅ Link copiado!", false)
+        else
+            ShowStatus("❌ " .. tostring(result), true)
+            warn("[PlatoBoost Error] " .. tostring(result))
+        end
+    end)
 end)
 
 CheckButton.MouseButton1Click:Connect(function()
     local key = KeyBox.Text:gsub("%s+", "")
     if key == "" then
-        ShowStatus("❌ Please enter a key", true)
+        ShowStatus("❌ Digite uma key", true)
         return
     end
 
-    ShowStatus("⏳ Verifying key...", false)
+    ShowStatus("⏳ Verificando key...", false)
 
     task.spawn(function()
         local success, err = verifyKey(key)
         if success then
-            ShowStatus("✅ Key valid! Loading...", false)
+            ShowStatus("✅ Key válida! Carregando...", false)
             task.wait(1)
             ExecuteScript()
         else
-            ShowStatus("❌ " .. (err or "Invalid key"), true)
+            ShowStatus("❌ " .. tostring(err), true)
         end
     end)
 end)
@@ -810,3 +856,5 @@ MainFrame.InputEnded:Connect(function(input)
 end)
 
 print("✅ Modern Key System Loaded | PlatoBoost Integration")
+print("🔧 Executor detectado: " .. (fRequest and "Suporta HTTP" or "NÃO suporta HTTP"))
+print("📋 Clipboard: " .. (fSetClipboard and "Disponível" or "Não disponível"))

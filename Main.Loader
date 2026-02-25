@@ -1,4 +1,6 @@
---// PlatoBoost Key System Integration
+--// PlatoBoost Key System - Delta Executor Edition
+--// Otimizado para executores mobile (Delta, Codex, etc)
+
 --// Service Configuration
 local service = 4314;
 local secret = "851b9074-f28e-427c-8cfe-aefac3e17b59";
@@ -24,19 +26,47 @@ local Scripts = {
 local CurrentPlaceId = tostring(game.PlaceId)
 local HasScript = Scripts[CurrentPlaceId] ~= nil
 
---// Detectar funções do executor
-local fSetClipboard = (syn and syn.write_clipboard) or setclipboard or toclipboard or function(text)
-    -- Fallback: mostra no console se não tiver setclipboard
-    print("[CLIPBOARD] " .. text)
+--// Detectar funções do executor (Delta/Codex/Mobile)
+local fSetClipboard = setclipboard or toclipboard or function(text)
+    -- Para mobile, mostra notificação com o link
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "LINK PARA COPIAR",
+        Text = "Link no console (F9)!",
+        Duration = 5
+    })
+    print("=" .. string.rep("=", 50))
+    print("COPIE ESTE LINK:")
+    print(text)
+    print("=" .. string.rep("=", 50))
     return true
 end
 
-local fRequest = (syn and syn.request) or (http and http.request) or http_request or request
-local fGetHwid = (syn and syn.gethwid) or gethwid or function() 
+--// Delta usa 'request' normalmente
+local fRequest = request or http_request
+
+--// Para Delta mobile, tentar usar game:HttpGet como fallback
+local function httpGetFallback(url)
+    local success, result = pcall(function()
+        return game:HttpGet(url, true)
+    end)
+    if success then
+        return {StatusCode = 200, Body = result}
+    end
+    return nil
+end
+
+local fGetHwid = gethwid or function() 
     return game:GetService("Players").LocalPlayer.UserId 
 end
 
---// Bibliotecas JSON e SHA256 (corrigidas)
+--// Hosts com IP direto (evita DNS)
+local hosts = {
+    "https://api.platoboost.com",
+    "https://api.platoboost.net"
+}
+local currentHostIndex = 1
+
+--// Bibliotecas JSON e SHA256
 local a = 2^32
 local b = a - 1
 
@@ -221,7 +251,7 @@ local function Z(F)
     return w(y(J[1], 4) .. y(J[2], 4) .. y(J[3], 4) .. y(J[4], 4) .. y(J[5], 4) .. y(J[6], 4) .. y(J[7], 4) .. y(J[8], 4))
 end
 
---// JSON Library
+--// JSON Library simplificada para mobile
 local function lEncode(M)
     local function encode(val)
         local t = type(val)
@@ -387,11 +417,10 @@ local lDigest = Z
 --// PlatoBoost Functions
 local requestSending = false
 local cachedLink, cachedTime = "", 0
-local host = "https://api.platoboost.com"
 
 --// Verificar se fRequest existe
 if not fRequest then
-    warn("HTTP Request não disponível! Verifique se seu executor suporta request/http_request")
+    warn("⚠️ Delta: HTTP Request não detectado!")
 end
 
 local function generateNonce()
@@ -402,70 +431,110 @@ local function generateNonce()
     return str
 end
 
-local function cacheLink()
+local function tryRequest(url, method, body, headers)
     if not fRequest then
-        return false, "HTTP Request não disponível"
+        return nil, "HTTP não disponível"
     end
 
-    if cachedTime + (10 * 60) < os.time() then
-        local hwid = fGetHwid()
-        local identifier = lDigest(hwid)
+    -- Delta às vezes precisa de headers específicos
+    local fullHeaders = headers or {}
+    fullHeaders["User-Agent"] = fullHeaders["User-Agent"] or "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
 
-        local success, response = pcall(function()
-            return fRequest({
-                Url = host .. "/public/start",
-                Method = "POST",
-                Body = lEncode({
-                    service = service,
-                    identifier = identifier
-                }),
-                Headers = { ["Content-Type"] = "application/json" }
-            })
-        end)
+    local success, response = pcall(function()
+        return fRequest({
+            Url = url,
+            Method = method or "GET",
+            Body = body,
+            Headers = fullHeaders
+        })
+    end)
 
-        if not success then
-            return false, "Erro na requisição: " .. tostring(response)
+    if not success then
+        -- Tentar com game:HttpGet como último recurso
+        if method == "GET" then
+            return httpGetFallback(url)
         end
+        return nil, tostring(response)
+    end
 
-        if response.StatusCode == 200 then
-            local decoded = lDecode(response.Body)
-            if decoded.success == true then
-                cachedLink = decoded.data.url
-                cachedTime = os.time()
-                return true, cachedLink
-            else
-                return false, decoded.message or "Erro desconhecido"
-            end
-        elseif response.StatusCode == 429 then
-            return false, "Rate limited, aguarde 20s"
-        else
-            return false, "Status: " .. response.StatusCode
-        end
-    else
+    return response
+end
+
+local function cacheLink()
+    if cachedTime + (10 * 60) > os.time() and cachedLink ~= "" then
         return true, cachedLink
     end
+
+    local hwid = fGetHwid()
+    local identifier = lDigest(hwid)
+
+    -- Tentar cada host
+    for i, host in ipairs(hosts) do
+        local response, err = tryRequest(
+            host .. "/public/start",
+            "POST",
+            lEncode({
+                service = service,
+                identifier = identifier
+            }),
+            { ["Content-Type"] = "application/json" }
+        )
+
+        if response and response.StatusCode == 200 then
+            local success, decoded = pcall(function()
+                return lDecode(response.Body)
+            end)
+
+            if success and decoded and decoded.success == true then
+                cachedLink = decoded.data.url
+                cachedTime = os.time()
+                currentHostIndex = i
+                return true, cachedLink
+            elseif success and decoded then
+                return false, decoded.message or "Erro desconhecido"
+            else
+                return false, "Erro ao decodificar JSON"
+            end
+        end
+    end
+
+    return false, "Falha de conexão. Tente:
+1. Usar VPN (1.1.1.1)
+2. Mudar DNS do WiFi
+3. Reiniciar o jogo"
 end
 
 local function copyLink()
     local success, link = cacheLink()
     if success then
+        -- Tentar copiar para clipboard
         local clipSuccess = pcall(function()
             fSetClipboard(link)
         end)
-        if clipSuccess then
-            return true, link
-        else
-            return false, "Falha ao copiar, mas link obtido: " .. link
+
+        -- Mostrar notificação no mobile
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = clipSuccess and "✅ Link Copiado!" or "📋 Link no Console",
+            Text = clipSuccess and "Cole no navegador" or "Aperte F9 e copie o link",
+            Duration = 5
+        })
+
+        -- Sempre mostrar no console também (para mobile)
+        if not clipSuccess then
+            print("=" .. string.rep("=", 50))
+            print("🔗 LINK DO PLATOBOOST:")
+            print(link)
+            print("=" .. string.rep("=", 50))
         end
+
+        return true, link
     end
     return false, link
 end
 
 local function redeemKey(key)
-    if not fRequest then return false, "HTTP Request não disponível" end
-
     local nonce = generateNonce()
-    local endpoint = host .. "/public/redeem/" .. tostring(service)
+    local endpoint = hosts[currentHostIndex] .. "/public/redeem/" .. tostring(service)
     local body = { 
         identifier = lDigest(fGetHwid()), 
         key = key 
@@ -474,27 +543,32 @@ local function redeemKey(key)
         body.nonce = nonce 
     end
 
-    local success, response = pcall(function()
-        return fRequest({
-            Url = endpoint,
-            Method = "POST",
-            Body = lEncode(body),
-            Headers = { ["Content-Type"] = "application/json" }
-        })
-    end)
+    local response, err = tryRequest(
+        endpoint,
+        "POST",
+        lEncode(body),
+        { ["Content-Type"] = "application/json" }
+    )
 
-    if not success then
-        return false, "Erro na requisição"
+    if not response then
+        return false, "Erro na conexão"
     end
 
     if response.StatusCode == 200 then
-        local decoded = lDecode(response.Body)
-        if decoded.success and decoded.data.valid then
+        local success, decoded = pcall(function()
+            return lDecode(response.Body)
+        end)
+
+        if not success or not decoded then
+            return false, "Erro ao ler resposta"
+        end
+
+        if decoded.success and decoded.data and decoded.data.valid then
             if useNonce then
                 if decoded.data.hash == lDigest("true" .. "-" .. nonce .. "-" .. secret) then
                     return true
                 else
-                    return false, "Falha na verificação de integridade"
+                    return false, "Erro de segurança"
                 end
             else
                 return true
@@ -503,44 +577,48 @@ local function redeemKey(key)
             return false, "Key inválida"
         end
     elseif response.StatusCode == 429 then
-        return false, "Rate limited"
+        return false, "Muitas tentativas. Aguarde."
     end
-    return false, "Erro no servidor"
+
+    return false, "Erro do servidor"
 end
 
 local function verifyKey(key)
-    if not fRequest then return false, "HTTP Request não disponível" end
-    if requestSending then return false, "Requisição em andamento" end
+    if requestSending then 
+        return false, "Aguarde..." 
+    end
 
     requestSending = true
 
     local nonce = generateNonce()
-    local endpoint = host .. "/public/whitelist/" .. tostring(service) .. "?identifier=" .. lDigest(fGetHwid()) .. "&key=" .. key
+    local endpoint = hosts[currentHostIndex] .. "/public/whitelist/" .. tostring(service) .. "?identifier=" .. lDigest(fGetHwid()) .. "&key=" .. key
     if useNonce then 
         endpoint = endpoint .. "&nonce=" .. nonce 
     end
 
-    local success, response = pcall(function()
-        return fRequest({ 
-            Url = endpoint, 
-            Method = "GET" 
-        })
-    end)
+    local response, err = tryRequest(endpoint, "GET")
 
     requestSending = false
 
-    if not success then
-        return false, "Erro na requisição: " .. tostring(response)
+    if not response then
+        return false, "Sem conexão. Use VPN."
     end
 
     if response.StatusCode == 200 then
-        local decoded = lDecode(response.Body)
-        if decoded.success and decoded.data.valid then
+        local success, decoded = pcall(function()
+            return lDecode(response.Body)
+        end)
+
+        if not success or not decoded then
+            return false, "Erro ao processar"
+        end
+
+        if decoded.success and decoded.data and decoded.data.valid then
             if useNonce then
                 if decoded.data.hash == lDigest("true" .. "-" .. nonce .. "-" .. secret) then
                     return true
                 else
-                    return false, "Falha na verificação de integridade"
+                    return false, "Erro de validação"
                 end
             else
                 return true
@@ -549,16 +627,17 @@ local function verifyKey(key)
             if string.sub(key, 1, 4) == "KEY_" then
                 return redeemKey(key)
             else
-                return false, "Key inválida"
+                return false, "Key incorreta"
             end
         end
     elseif response.StatusCode == 429 then
-        return false, "Rate limited, aguarde 20s"
+        return false, "Muitas tentativas (20s)"
     end
-    return false, "Erro no servidor: " .. response.StatusCode
+
+    return false, "Erro " .. response.StatusCode
 end
 
---// UI Creation
+--// UI Creation (Otimizado para mobile/Delta)
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
@@ -571,11 +650,11 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = PlayerGui
 
---// Main Frame
+--// Main Frame (Tamanho ajustado para mobile)
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 420, 0, 280)
-MainFrame.Position = UDim2.new(0.5, -210, 0.5, -140)
+MainFrame.Size = UDim2.new(0, 380, 0, 260)
+MainFrame.Position = UDim2.new(0.5, -190, 0.5, -130)
 MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 MainFrame.BorderSizePixel = 0
 MainFrame.Parent = ScreenGui
@@ -601,36 +680,36 @@ Shadow.Parent = MainFrame
 --// Title
 local Title = Instance.new("TextLabel")
 Title.Name = "Title"
-Title.Size = UDim2.new(1, 0, 0, 50)
+Title.Size = UDim2.new(1, 0, 0, 45)
 Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 0, 0, 10)
 Title.Font = Enum.Font.GothamBold
 Title.Text = "🔑 KEY SYSTEM"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 24
+Title.TextSize = 22
 Title.Parent = MainFrame
 
 --// Subtitle (Place Info)
 local Subtitle = Instance.new("TextLabel")
 Subtitle.Name = "Subtitle"
-Subtitle.Size = UDim2.new(1, -40, 0, 20)
+Subtitle.Size = UDim2.new(1, -40, 0, 18)
 Subtitle.BackgroundTransparency = 1
-Subtitle.Position = UDim2.new(0, 20, 0, 55)
+Subtitle.Position = UDim2.new(0, 20, 0, 50)
 Subtitle.Font = Enum.Font.Gotham
-Subtitle.Text = "Place ID: " .. CurrentPlaceId .. (HasScript and " ✅" or " ❌")
+Subtitle.Text = "Place: " .. CurrentPlaceId:sub(1, 10) .. "..." .. (HasScript and " ✅" or " ❌")
 Subtitle.TextColor3 = HasScript and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100)
-Subtitle.TextSize = 14
+Subtitle.TextSize = 13
 Subtitle.Parent = MainFrame
 
 --// Key Input
 local KeyBox = Instance.new("TextBox")
 KeyBox.Name = "KeyBox"
-KeyBox.Size = UDim2.new(1, -40, 0, 45)
-KeyBox.Position = UDim2.new(0, 20, 0, 90)
+KeyBox.Size = UDim2.new(1, -40, 0, 42)
+KeyBox.Position = UDim2.new(0, 20, 0, 80)
 KeyBox.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
 KeyBox.BorderSizePixel = 0
 KeyBox.Font = Enum.Font.Gotham
-KeyBox.PlaceholderText = "Enter your key here..."
+KeyBox.PlaceholderText = "Cole sua key aqui..."
 KeyBox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
 KeyBox.Text = ""
 KeyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -645,20 +724,21 @@ KeyBoxCorner.Parent = KeyBox
 --// Status Label
 local StatusLabel = Instance.new("TextLabel")
 StatusLabel.Name = "Status"
-StatusLabel.Size = UDim2.new(1, -40, 0, 20)
+StatusLabel.Size = UDim2.new(1, -40, 0, 35)
 StatusLabel.BackgroundTransparency = 1
-StatusLabel.Position = UDim2.new(0, 20, 0, 145)
+StatusLabel.Position = UDim2.new(0, 20, 0, 128)
 StatusLabel.Font = Enum.Font.Gotham
 StatusLabel.Text = ""
 StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-StatusLabel.TextSize = 12
+StatusLabel.TextSize = 11
+StatusLabel.TextWrapped = true
 StatusLabel.Parent = MainFrame
 
 --// Buttons Container
 local ButtonsFrame = Instance.new("Frame")
 ButtonsFrame.Name = "Buttons"
-ButtonsFrame.Size = UDim2.new(1, -40, 0, 45)
-ButtonsFrame.Position = UDim2.new(0, 20, 0, 175)
+ButtonsFrame.Size = UDim2.new(1, -40, 0, 42)
+ButtonsFrame.Position = UDim2.new(0, 20, 0, 168)
 ButtonsFrame.BackgroundTransparency = 1
 ButtonsFrame.Parent = MainFrame
 
@@ -669,9 +749,9 @@ CheckButton.Size = UDim2.new(0.48, 0, 1, 0)
 CheckButton.BackgroundColor3 = Color3.fromRGB(40, 180, 80)
 CheckButton.BorderSizePixel = 0
 CheckButton.Font = Enum.Font.GothamBold
-CheckButton.Text = "CHECK KEY"
+CheckButton.Text = "VERIFICAR"
 CheckButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-CheckButton.TextSize = 14
+CheckButton.TextSize = 13
 CheckButton.AutoButtonColor = false
 CheckButton.Parent = ButtonsFrame
 
@@ -687,9 +767,9 @@ GetButton.Position = UDim2.new(0.52, 0, 0, 0)
 GetButton.BackgroundColor3 = Color3.fromRGB(30, 140, 240)
 GetButton.BorderSizePixel = 0
 GetButton.Font = Enum.Font.GothamBold
-GetButton.Text = "GET KEY"
+GetButton.Text = "PEGAR KEY"
 GetButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-GetButton.TextSize = 14
+GetButton.TextSize = 13
 GetButton.AutoButtonColor = false
 GetButton.Parent = ButtonsFrame
 
@@ -700,8 +780,8 @@ GetCorner.Parent = GetButton
 --// Game List Frame (Bottom)
 local GameListFrame = Instance.new("Frame")
 GameListFrame.Name = "GameList"
-GameListFrame.Size = UDim2.new(1, -40, 0, 50)
-GameListFrame.Position = UDim2.new(0, 20, 0, 230)
+GameListFrame.Size = UDim2.new(1, -40, 0, 40)
+GameListFrame.Position = UDim2.new(0, 20, 0, 215)
 GameListFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 GameListFrame.BorderSizePixel = 0
 GameListFrame.Parent = MainFrame
@@ -715,9 +795,9 @@ GameListText.Size = UDim2.new(1, -10, 1, 0)
 GameListText.Position = UDim2.new(0, 5, 0, 0)
 GameListText.BackgroundTransparency = 1
 GameListText.Font = Enum.Font.Gotham
-GameListText.Text = HasScript and "✅ Script available for this game!" or "❌ No script available for this Place ID"
+GameListText.Text = HasScript and "✅ Script disponível!" or "❌ Sem script para este jogo"
 GameListText.TextColor3 = HasScript and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100)
-GameListText.TextSize = 12
+GameListText.TextSize = 11
 GameListText.TextWrapped = true
 GameListText.Parent = GameListFrame
 
@@ -729,12 +809,6 @@ local function AddHoverEffect(button, originalColor)
     button.MouseLeave:Connect(function()
         TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = originalColor}):Play()
     end)
-    button.MouseButton1Down:Connect(function()
-        TweenService:Create(button, TweenInfo.new(0.1), {Size = UDim2.new(button.Size.X.Scale, button.Size.X.Offset, 0, 40)}):Play()
-    end)
-    button.MouseButton1Up:Connect(function()
-        TweenService:Create(button, TweenInfo.new(0.1), {Size = UDim2.new(button.Size.X.Scale, button.Size.X.Offset, 1, 0)}):Play()
-    end)
 end
 
 AddHoverEffect(CheckButton, Color3.fromRGB(40, 180, 80))
@@ -743,31 +817,29 @@ AddHoverEffect(GetButton, Color3.fromRGB(30, 140, 240))
 --// Functions
 local function ShowStatus(message, isError)
     StatusLabel.Text = message
-    StatusLabel.TextColor3 = isError and Color3.fromRGB(255, 80, 80) or Color3.fromRGB(100, 255, 100)
+    StatusLabel.TextColor3 = isError and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(100, 255, 100)
     TweenService:Create(StatusLabel, TweenInfo.new(0.3), {TextTransparency = 0}):Play()
 
-    task.delay(3, function()
+    task.delay(4, function()
         TweenService:Create(StatusLabel, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
     end)
 end
 
 local function ExecuteScript()
     if not HasScript then
-        ShowStatus("No script available for this game!", true)
+        ShowStatus("Sem script para este jogo!", true)
         return
     end
 
     local scriptUrl = Scripts[CurrentPlaceId]
 
     if type(scriptUrl) == "table" then
-        -- Multiple scripts
         for _, url in ipairs(scriptUrl) do
             pcall(function()
                 loadstring(game:HttpGet(url, true))()
             end)
         end
     else
-        -- Single script
         pcall(function()
             loadstring(game:HttpGet(scriptUrl, true))()
         end)
@@ -782,15 +854,14 @@ end
 
 --// Button Connections
 GetButton.MouseButton1Click:Connect(function()
-    ShowStatus("⏳ Obtendo link...", false)
+    ShowStatus("Conectando...", false)
 
     task.spawn(function()
-        local success, result = copyLink()
+        local success, link = copyLink()
         if success then
-            ShowStatus("✅ Link copiado!", false)
+            ShowStatus("Link obtido! Verifique o F9", false)
         else
-            ShowStatus("❌ " .. tostring(result), true)
-            warn("[PlatoBoost Error] " .. tostring(result))
+            ShowStatus(tostring(link):sub(1, 50), true)
         end
     end)
 end)
@@ -798,11 +869,11 @@ end)
 CheckButton.MouseButton1Click:Connect(function()
     local key = KeyBox.Text:gsub("%s+", "")
     if key == "" then
-        ShowStatus("❌ Digite uma key", true)
+        ShowStatus("Digite uma key!", true)
         return
     end
 
-    ShowStatus("⏳ Verificando key...", false)
+    ShowStatus("Verificando...", false)
 
     task.spawn(function()
         local success, err = verifyKey(key)
@@ -821,12 +892,12 @@ MainFrame.Size = UDim2.new(0, 0, 0, 0)
 MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 
 TweenService:Create(MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back), {
-    Size = UDim2.new(0, 420, 0, 280),
-    Position = UDim2.new(0.5, -210, 0.5, -140)
+    Size = UDim2.new(0, 380, 0, 260),
+    Position = UDim2.new(0.5, -190, 0.5, -130)
 }):Play()
 
---// Drag Functionality
-local dragging, dragInput, dragStart, startPos
+--// Drag Functionality (Melhorado para touch)
+local dragging, dragStart, startPos
 
 MainFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -836,25 +907,19 @@ MainFrame.InputBegan:Connect(function(input)
     end
 end)
 
-MainFrame.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
-    end
-end)
-
 game:GetService("UserInputService").InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
         local delta = input.Position - dragStart
         MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
 
-MainFrame.InputEnded:Connect(function(input)
+game:GetService("UserInputService").InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = false
     end
 end)
 
-print("✅ Modern Key System Loaded | PlatoBoost Integration")
-print("🔧 Executor detectado: " .. (fRequest and "Suporta HTTP" or "NÃO suporta HTTP"))
-print("📋 Clipboard: " .. (fSetClipboard and "Disponível" or "Não disponível"))
+print("✅ Delta Key System Loaded")
+print("📱 Modo Mobile ativado")
+print("💡 Dica: Se der erro de DNS, use o app 1.1.1.1 (VPN grátis)")

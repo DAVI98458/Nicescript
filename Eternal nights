@@ -1,4 +1,4 @@
--- This script was generated using the MoonVeil Obfuscator v1.4.5 [https://moonveil.cc]
+-- Lil bro stealing code
 
 local he,Jm,fa_,aI,Zf,oE=bit32.bxor,pairs,getmetatable,type
 local uf,Wx,in_,bj,ay,bx,Rc,Rf,wC,fv,xf,UE,Pe,PA,Ur,Cq,wc,Br,rd,Fo,oc,Bj,qp,Rr,Zs;
